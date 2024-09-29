@@ -59,3 +59,21 @@ export const deleteProfile = async (userId: string) => {
     throw new Error("Failed to delete profile");
   }
 };
+
+// i want to check if the user is an admin
+export const isAdmin = async (userId: string) => {
+  const profile = await getProfileByUserId(userId);
+  return profile?.role === "admin";
+};
+
+
+export const updateProfileWithClerk = async (userId: string, data: Partial<InsertProfile>) => {
+  try {
+    const [updatedProfile] = await db.update(profilesTable).set(data).where(eq(profilesTable.userId, userId)).returning();
+    return updatedProfile;
+  } catch (error) {
+    console.error("Error updating profile with clerk:", error);
+    throw new Error("Failed to update profile");
+  }
+};
+

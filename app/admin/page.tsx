@@ -15,9 +15,11 @@ export default async function NotesPage() {
     return redirect("/signup");
   }
 
-  if (profile.membership === "free") {
-    return redirect("/pricing");
+  if (profile.role !== "admin") {
+    return redirect("/feedback");
   }
 
-  return <div>Notes</div>;
+ 
+
+  return <div>Admin</div>;
 }

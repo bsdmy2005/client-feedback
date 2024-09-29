@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ALTER COLUMN "membership" SET DEFAULT 'pro';

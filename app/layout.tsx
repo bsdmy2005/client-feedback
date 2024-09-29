@@ -12,8 +12,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Notes App",
-  description: "A full-stack template for a notes app."
+  title: "ES client feedback",
+  description: "ES client feedback"
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <body className={inter.className}>
           <Providers
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             disableTransitionOnChange
           >
             <Header />
