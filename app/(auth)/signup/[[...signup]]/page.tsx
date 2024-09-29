@@ -9,10 +9,7 @@ export default function SignUpPage() {
   const { theme } = useTheme();
   const router = useRouter();
 
-  const handleSignUpComplete = () => {
-    router.push("/admin");
-  };
-
+  
   return (
     <SignUp
       appearance={{ baseTheme: theme === "dark" ? dark : undefined }}
