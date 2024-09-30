@@ -7,7 +7,12 @@ import { revalidatePath } from "next/cache";
 export async function getAllClientsAction(): Promise<ActionResult<any>> {
   try {
     const clients = await getAllClients();
-    return { isSuccess: true, message: "Clients fetched successfully", data: clients };
+    const clientsData = clients.map(client => ({
+      clientId: client.clientId,
+      name: client.name,
+      description: client.description
+    }));
+    return { isSuccess: true, message: "Clients fetched successfully", data: clientsData };
   } catch (error) {
     return { isSuccess: false, message: "Failed to fetch clients" };
   }

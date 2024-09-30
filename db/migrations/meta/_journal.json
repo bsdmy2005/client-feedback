@@ -8,6 +8,13 @@
       "when": 1727642952120,
       "tag": "0000_awesome_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1727674003281,
+      "tag": "0001_windy_ezekiel_stane",
+      "breakpoints": true
     }
   ]
 }
