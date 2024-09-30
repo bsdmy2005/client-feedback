@@ -12,7 +12,7 @@ export async function getAllClientsAction(): Promise<ActionResult<any>> {
       name: client.name,
       description: client.description
     }));
-    return { isSuccess: true, message: "Clients fetched successfully", data: clientsData };
+    return { isSuccess: true, message: "Clients fetched successfully ", data: clientsData };
   } catch (error) {
     return { isSuccess: false, message: "Failed to fetch clients" };
   }
