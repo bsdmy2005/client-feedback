@@ -1,7 +1,8 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const clientsTable = pgTable("clients", {
-  id: text("id").primaryKey().notNull(),
+  clientId: uuid("client_id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

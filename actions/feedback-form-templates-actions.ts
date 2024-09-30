@@ -1,6 +1,6 @@
 import { db } from "@/db/db";
 import { feedbackFormTemplatesTable } from "@/db/schema/feedback-form-templates-schema";
-import { getTemplatesByClientId, getTemplateById } from "@/db/queries/feedback-form-templates-queries";
+import {  getTemplateById } from "@/db/queries/feedback-form-templates-queries";
 import { ActionResult } from "@/types/actions/actions-types";
 import { eq } from "drizzle-orm";
 
@@ -12,7 +12,7 @@ export async function createFeedbackFormTemplate(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const [newTemplate] = await db.insert(feedbackFormTemplatesTable).values({
-      clientId,
+      
       name,
       recurrenceInterval: 0, // Add this line
       startDate: new Date().toISOString(), // Add this line
@@ -52,4 +52,4 @@ export async function deleteFeedbackFormTemplate(id: string): Promise<ActionResu
   }
 }
 
-export { getTemplatesByClientId, getTemplateById };
+export {  getTemplateById };

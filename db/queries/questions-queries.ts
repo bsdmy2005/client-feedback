@@ -7,9 +7,9 @@ export const getQuestionById = async (id: string) => {
   return question;
 };
 
-export const getQuestionsByClientId = async (clientId: string) => {
-  return db.select().from(questionsTable).where(eq(questionsTable.clientId, clientId));
-};
+// export const getQuestionsByClientId = async (clientId: string) => {
+//   return db.select().from(questionsTable).where(eq(questionsTable.clientId, clientId));
+// };
 
 export const getGlobalQuestions = async () => {
   return db.select().from(questionsTable).where(eq(questionsTable.global, "true"));

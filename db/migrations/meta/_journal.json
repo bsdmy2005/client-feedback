@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1727623322679,
-      "tag": "0000_elite_longshot",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1727623420510,
-      "tag": "0001_superb_mach_iv",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1727623447946,
-      "tag": "0002_colorful_colleen_wing",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1727623469754,
-      "tag": "0003_dazzling_living_tribunal",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1727624654833,
-      "tag": "0004_equal_winter_soldier",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1727625840914,
-      "tag": "0005_pretty_ultimo",
+      "when": 1727642952120,
+      "tag": "0000_awesome_argent",
       "breakpoints": true
     }
   ]

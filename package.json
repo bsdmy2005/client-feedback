@@ -9,6 +9,10 @@
     "lint": "next lint",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
+    "db:studio": "npx drizzle-kit studio",
+    "db:push": "npx drizzle-kit push",
+    "db:migrate:deploy": "npx drizzle-kit migrate && npx drizzle-kit push",
+    "db:pull": "npx drizzle-kit pull",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

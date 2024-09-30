@@ -1,6 +1,6 @@
 import { db } from "@/db/db";
 import { questionsTable } from "@/db/schema/questions-schema";
-import { getQuestionById, getQuestionsByClientId, getGlobalQuestions } from "@/db/queries/questions-queries";
+import { getQuestionById,  getGlobalQuestions } from "@/db/queries/questions-queries";
 import { ActionResult } from "@/types/actions/actions-types";
 import { eq } from "drizzle-orm";
 
@@ -11,7 +11,7 @@ export async function createQuestion(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const [newQuestion] = await db.insert(questionsTable).values({
-      clientId,
+      
       questionText,
       questionType,
     }).returning({ id: questionsTable.id });
@@ -46,4 +46,4 @@ export async function deleteQuestion(id: string): Promise<ActionResult<void>> {
   }
 }
 
-export { getQuestionById, getQuestionsByClientId, getGlobalQuestions };
+export { getQuestionById,  getGlobalQuestions };
