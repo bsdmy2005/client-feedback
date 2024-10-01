@@ -7,4 +7,7 @@ export const feedbackFormTemplatesTable = pgTable("feedback_form_templates", {
   recurrenceInterval: integer("recurrence_interval").notNull(),
   startDate: date("start_date").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  clientId: uuid("client_id").references(() => clientsTable.clientId).notNull(),
 });
+
+export type Template = typeof feedbackFormTemplatesTable.$inferSelect;

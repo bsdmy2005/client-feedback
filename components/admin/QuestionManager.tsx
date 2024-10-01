@@ -1,115 +1,120 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircleIcon, XCircleIcon, PencilIcon, TrashIcon, CheckIcon, XIcon } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { InsertQuestion } from "@/db/schema/questions-schema"
-import { getAllClientsAction } from "@/actions/clients-actions"
-import { createQuestion, updateQuestion, deleteQuestion, getAllQuestions } from "@/actions/questions-actions"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircleIcon, XCircleIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { InsertQuestion } from "@/db/schema/questions-schema";
+import { getAllClientsAction, getClientByIdAction } from "@/actions/clients-actions";
+import { createQuestion, updateQuestion, deleteQuestion, getAllQuestions } from "@/actions/questions-actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
-type QuestionType = 'free_text' | 'multiple_choice' | 'drop_down'
-type QuestionTheme = 'competition' | 'environment' | 'personal' | 'bus_dev'
+type QuestionType = 'free_text' | 'multiple_choice' | 'drop_down';
+type QuestionTheme = 'competition' | 'environment' | 'personal' | 'bus_dev';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function QuestionManager() {
   const [question, setQuestion] = useState<Partial<InsertQuestion>>({
     questionType: 'multiple_choice',
     questionTheme: 'competition',
     global: 'true',
-  })
-  const [options, setOptions] = useState([""])
-  const [clients, setClients] = useState<{clientId: string, name: string}[]>([])
-  const [questions, setQuestions] = useState<any[]>([])
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  });
+  const [options, setOptions] = useState([""]);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const clientsResult = await getAllClientsAction()
-      if (clientsResult.isSuccess && clientsResult.data) {
-        setClients(clientsResult.data)
-      }
-
-      const questionsResult = await getAllQuestions()
+      const questionsResult = await getAllQuestions();
       if (questionsResult.isSuccess && questionsResult.data) {
-        setQuestions(questionsResult.data)
+        setQuestions(questionsResult.data);
       }
-    }
-    fetchData()
-  }, [])
+      const clientsResult = await getAllClientsAction();
+      if (clientsResult.isSuccess && clientsResult.data) {
+        setClients(clientsResult.data);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleAddOption = () => {
-    setOptions([...options, ""])
-  }
+    setOptions([...options, ""]);
+  };
 
   const handleRemoveOption = (index: number) => {
-    const newOptions = options.filter((_, i) => i !== index)
-    setOptions(newOptions)
-  }
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+  };
 
   const handleOptionChange = (index: number, value: string) => {
-    const newOptions = [...options]
-    newOptions[index] = value
-    setOptions(newOptions)
-  }
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const questionData = { 
-      ...question, 
-      options: question.questionType === 'free_text' ? undefined : options 
-    }
-    
+    e.preventDefault();
+
+    const questionData = {
+      ...question,
+      options: question.questionType === 'free_text' ? undefined : options,
+    };
+
     if (editingQuestionId) {
+      // Update existing question
       const result = await updateQuestion(editingQuestionId, {
         ...questionData,
-        clientId: questionData.clientId || undefined
-      })
+        global: questionData.global === 'true' ? 'true' : 'false',
+        clientId: questionData.global === 'true' ? undefined : questionData.clientId ?? undefined
+      });
       if (result.isSuccess) {
-        setQuestions(questions.map(q => q.id === editingQuestionId ? { ...q, ...questionData } : q))
-        setEditingQuestionId(null)
+        setQuestions(questions.map(q => q.id === editingQuestionId ? { ...q, ...questionData } : q));
+        setEditingQuestionId(null);
       }
-      setIsEditDialogOpen(false)
+      setIsEditDialogOpen(false);
     } else {
+      // Create new question
       const result = await createQuestion(
         questionData.questionText!,
-        questionData.questionType as 'free_text' | 'multiple_choice' | 'drop_down',
-        questionData.questionTheme as "competition" | "environment" | "personal" | "bus_dev",
+        questionData.questionType as QuestionType,
+        questionData.questionTheme as QuestionTheme,
         questionData.global === 'true',
-        questionData.clientId ?? undefined,
+        questionData.global === 'true' ? undefined : questionData.clientId ?? undefined,
         questionData.options
-      )
+      );
+
       if (result.isSuccess && result.data) {
-        setQuestions([...questions, { ...questionData, id: result.data.id }])
+        setQuestions([...questions, { ...questionData, id: result.data.id }]);
       }
     }
 
-    resetForm()
-  }
+    resetForm();
+  };
 
   const resetForm = () => {
     setQuestion({
       questionType: 'multiple_choice',
       questionTheme: 'competition',
       global: 'true',
-    })
-    setOptions([""])
-    setEditingQuestionId(null)
-  }
+    });
+    setOptions([""]);
+    setEditingQuestionId(null);
+  };
 
   const handleEdit = (q: any) => {
     setQuestion({
@@ -117,29 +122,23 @@ export function QuestionManager() {
       questionTheme: q.questionTheme,
       global: q.global,
       questionText: q.questionText,
-      clientId: q.clientId,
-    })
-    setOptions(q.options || [""])
-    setEditingQuestionId(q.id)
-    setIsEditDialogOpen(true)
-  }
+    });
+    setOptions(q.options || [""]);
+    setEditingQuestionId(q.id);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDelete = async (id: string) => {
-    const result = await deleteQuestion(id)
+    const result = await deleteQuestion(id);
     if (result.isSuccess) {
-      setQuestions(questions.filter(q => q.id !== id))
+      setQuestions(questions.filter(q => q.id !== id));
     }
-  }
+  };
 
   const handleCancelEdit = () => {
-    resetForm()
-    setIsEditDialogOpen(false)
-  }
-
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.clientId === clientId)
-    return client ? client.name : 'Unknown Client'
-  }
+    resetForm();
+    setIsEditDialogOpen(false);
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -160,7 +159,7 @@ export function QuestionManager() {
                     <Label htmlFor="questionType">Question Type</Label>
                     <Select
                       value={question.questionType}
-                      onValueChange={(value: QuestionType) => setQuestion({...question, questionType: value})}
+                      onValueChange={(value: QuestionType) => setQuestion({ ...question, questionType: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select question type" />
@@ -176,7 +175,7 @@ export function QuestionManager() {
                     <Label htmlFor="questionTheme">Question Theme</Label>
                     <Select
                       value={question.questionTheme}
-                      onValueChange={(value: QuestionTheme) => setQuestion({...question, questionTheme: value})}
+                      onValueChange={(value: QuestionTheme) => setQuestion({ ...question, questionTheme: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select question theme" />
@@ -195,7 +194,7 @@ export function QuestionManager() {
                   <Textarea
                     id="questionText"
                     value={question.questionText || ''}
-                    onChange={(e) => setQuestion({...question, questionText: e.target.value})}
+                    onChange={(e) => setQuestion({ ...question, questionText: e.target.value })}
                     placeholder="Enter your question"
                     required
                     className="min-h-[100px]"
@@ -230,27 +229,27 @@ export function QuestionManager() {
                     </Button>
                   </div>
                 )}
-                <div className="flex items-center space-x-2">
+                <div className="space-y-2">
+                  <Label htmlFor="global">Global Question</Label>
                   <Switch
                     id="global"
                     checked={question.global === 'true'}
-                    onCheckedChange={(checked) => setQuestion({...question, global: checked ? 'true' : 'false'})}
+                    onCheckedChange={(checked) => setQuestion({ ...question, global: checked ? 'true' : 'false' })}
                   />
-                  <Label htmlFor="global">Global Question</Label>
                 </div>
                 {question.global === 'false' && (
                   <div className="space-y-2">
                     <Label htmlFor="clientId">Client</Label>
                     <Select
-                      value={question.clientId ?? ''}
-                      onValueChange={(value: string) => setQuestion({...question, clientId: value})}
+                      value={question.clientId ?? undefined}
+                      onValueChange={(value) => setQuestion({ ...question, clientId: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select client" />
+                        <SelectValue placeholder="Select a client" />
                       </SelectTrigger>
                       <SelectContent>
                         {clients.map((client) => (
-                          <SelectItem key={client.clientId} value={client.clientId}>
+                          <SelectItem key={client.id} value={client.id}>
                             {client.name}
                           </SelectItem>
                         ))}
@@ -260,7 +259,7 @@ export function QuestionManager() {
                 )}
                 <div className="flex justify-end space-x-2">
                   <Button type="submit">
-                    Add Question
+                    {editingQuestionId ? 'Update Question' : 'Add Question'}
                   </Button>
                 </div>
               </form>
@@ -284,9 +283,6 @@ export function QuestionManager() {
                             <Badge>{q.questionType}</Badge>
                             <Badge variant="outline">{q.questionTheme}</Badge>
                             <Badge variant="secondary">{q.global === 'true' ? 'Global' : 'Client-specific'}</Badge>
-                            {q.global === 'false' && q.clientId && (
-                              <Badge variant="secondary">Client: {getClientName(q.clientId)}</Badge>
-                            )}
                           </div>
                         </div>
                         <div className="flex space-x-2">
@@ -317,7 +313,7 @@ export function QuestionManager() {
                 <Label htmlFor="questionType">Question Type</Label>
                 <Select
                   value={question.questionType}
-                  onValueChange={(value: QuestionType) => setQuestion({...question, questionType: value})}
+                  onValueChange={(value: QuestionType) => setQuestion({ ...question, questionType: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select question type" />
@@ -333,7 +329,7 @@ export function QuestionManager() {
                 <Label htmlFor="questionTheme">Question Theme</Label>
                 <Select
                   value={question.questionTheme}
-                  onValueChange={(value: QuestionTheme) => setQuestion({...question, questionTheme: value})}
+                  onValueChange={(value: QuestionTheme) => setQuestion({ ...question, questionTheme: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select question theme" />
@@ -352,7 +348,7 @@ export function QuestionManager() {
               <Textarea
                 id="questionText"
                 value={question.questionText || ''}
-                onChange={(e) => setQuestion({...question, questionText: e.target.value})}
+                onChange={(e) => setQuestion({ ...question, questionText: e.target.value })}
                 placeholder="Enter your question"
                 required
                 className="min-h-[100px]"
@@ -387,34 +383,6 @@ export function QuestionManager() {
                 </Button>
               </div>
             )}
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="global"
-                checked={question.global === 'true'}
-                onCheckedChange={(checked) => setQuestion({...question, global: checked ? 'true' : 'false'})}
-              />
-              <Label htmlFor="global">Global Question</Label>
-            </div>
-            {question.global === 'false' && (
-              <div className="space-y-2">
-                <Label htmlFor="clientId">Client</Label>
-                <Select
-                  value={question.clientId ?? ''}
-                  onValueChange={(value: string) => setQuestion({...question, clientId: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.clientId} value={client.clientId}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={handleCancelEdit}>
                 Cancel
@@ -427,5 +395,5 @@ export function QuestionManager() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

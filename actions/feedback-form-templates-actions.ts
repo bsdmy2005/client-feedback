@@ -1,3 +1,6 @@
+"use server";	
+
+
 import { db } from "@/db/db";
 import { feedbackFormTemplatesTable } from "@/db/schema/feedback-form-templates-schema";
 import {  getTemplateById } from "@/db/queries/feedback-form-templates-queries";
@@ -12,10 +15,10 @@ export async function createFeedbackFormTemplate(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const [newTemplate] = await db.insert(feedbackFormTemplatesTable).values({
-      
+      clientId,
       name,
-      recurrenceInterval: 0, // Add this line
-      startDate: new Date().toISOString(), // Add this line
+      recurrenceInterval,
+      startDate: startDate.toISOString(),
     }).returning({ id: feedbackFormTemplatesTable.id });
 
     return { isSuccess: true, message: "Feedback form template created successfully", data: { id: newTemplate.id } };
@@ -49,6 +52,16 @@ export async function deleteFeedbackFormTemplate(id: string): Promise<ActionResu
   } catch (error) {
     console.error("Failed to delete feedback form template:", error);
     return { isSuccess: false, message: "Failed to delete feedback form template" };
+  }
+}
+
+export async function getTemplatesByClientId(clientId: string) {
+  try {
+    const templates = await db.select().from(feedbackFormTemplatesTable).where(eq(feedbackFormTemplatesTable.clientId, clientId));
+    return { isSuccess: true, message: "Templates fetched successfully", data: templates };
+  } catch (error) {
+    console.error("Failed to fetch templates:", error);
+    return { isSuccess: false, message: "Failed to fetch templates" };
   }
 }
 

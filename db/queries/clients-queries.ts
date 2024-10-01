@@ -9,18 +9,10 @@ export const createClient = async (name: string, description: string) => {
   return await db.insert(clientsTable).values({ name, description }).returning();
 };
 
-export async function updateClient(name: string, newName: string, description: string) {
-  const existingClient = await getClientByName(name);
-  
-  if (existingClient.length === 0) {
-    throw new Error("Client not found");
-  }
-
-  const clientToUpdate = existingClient[0];
-
+export async function updateClient(clientId: string, newName: string, description: string) {
   return await db.update(clientsTable)
     .set({ name: newName, description })
-    .where(eq(clientsTable.clientId, clientToUpdate.clientId))
+    .where(eq(clientsTable.clientId, clientId))
     .returning();
 }
 
@@ -37,3 +29,10 @@ export const getClientByName = async (name: string) => {
   console.log("getClientByName result:", result);
   return result;
 };
+
+export const getClientById = async (id: string) => {
+  const result = await db.select().from(clientsTable).where(eq(clientsTable.clientId, id));
+  console.log("getClientById result:", result);
+  return result;
+};
+

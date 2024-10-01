@@ -6,6 +6,7 @@ import { questionOptionsTable } from "@/db/schema/question-options-schema";
 import { getQuestionById, getGlobalQuestions, getQuestionsByClientId, getQuestionsByTheme } from "@/db/queries/questions-queries";
 import { ActionResult } from "@/types/actions/actions-types";
 import { eq } from "drizzle-orm";
+import { getClientByIdAction } from "./clients-actions";
 
 export async function createQuestion(
   questionText: string,
@@ -95,9 +96,20 @@ export async function getAllQuestions(): Promise<ActionResult<any[]>> {
     const questions = await db.select().from(questionsTable);
     const options = await db.select().from(questionOptionsTable);
 
-    const questionsWithOptions = questions.map(question => ({
-      ...question,
-      options: options.filter(option => option.questionId === question.id).map(option => option.optionText)
+    const questionsWithOptions = await Promise.all(questions.map(async question => {
+      const questionOptions = options.filter(option => option.questionId === question.id).map(option => option.optionText);
+      let clientName = null;
+      if (question.clientId) {
+        const clientResult = await getClientByIdAction(question.clientId);
+        if (clientResult.isSuccess && clientResult.data && clientResult.data.length > 0) {
+          clientName = clientResult.data[0].name;
+        }
+      }
+      return {
+        ...question,
+        options: questionOptions,
+        clientName,
+      };
     }));
 
     return { isSuccess: true, message: "Questions retrieved successfully", data: questionsWithOptions };
