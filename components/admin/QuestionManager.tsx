@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 type QuestionType = 'free_text' | 'multiple_choice' | 'drop_down';
 type QuestionTheme = 'competition' | 'environment' | 'personal' | 'bus_dev';
@@ -37,6 +38,7 @@ export function QuestionManager() {
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,6 +87,17 @@ export function QuestionManager() {
       if (result.isSuccess) {
         setQuestions(questions.map(q => q.id === editingQuestionId ? { ...q, ...questionData } : q));
         setEditingQuestionId(null);
+        toast({
+          title: "Success",
+          description: "Question updated successfully",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update question",
+          variant: "destructive",
+        });
       }
       setIsEditDialogOpen(false);
     } else {
@@ -100,6 +113,17 @@ export function QuestionManager() {
 
       if (result.isSuccess && result.data) {
         setQuestions([...questions, { ...questionData, id: result.data.id }]);
+        toast({
+          title: "Success",
+          description: "Question added successfully",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add question",
+          variant: "destructive",
+        });
       }
     }
 
@@ -132,6 +156,17 @@ export function QuestionManager() {
     const result = await deleteQuestion(id);
     if (result.isSuccess) {
       setQuestions(questions.filter(q => q.id !== id));
+      toast({
+        title: "Success",
+        description: "Question deleted successfully",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete question",
+        variant: "destructive",
+      });
     }
   };
 
@@ -161,7 +196,7 @@ export function QuestionManager() {
                       value={question.questionType}
                       onValueChange={(value: QuestionType) => setQuestion({ ...question, questionType: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-64">
                         <SelectValue placeholder="Select question type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -231,11 +266,14 @@ export function QuestionManager() {
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="global">Global Question</Label>
-                  <Switch
-                    id="global"
-                    checked={question.global === 'true'}
-                    onCheckedChange={(checked) => setQuestion({ ...question, global: checked ? 'true' : 'false' })}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <span>Global</span>
+                    <Switch
+                      id="global"
+                      checked={question.global === 'true'}
+                      onCheckedChange={(checked) => setQuestion({ ...question, global: checked ? 'true' : 'false' })}
+                    />
+                  </div>
                 </div>
                 {question.global === 'false' && (
                   <div className="space-y-2">
@@ -283,6 +321,9 @@ export function QuestionManager() {
                             <Badge>{q.questionType}</Badge>
                             <Badge variant="outline">{q.questionTheme}</Badge>
                             <Badge variant="secondary">{q.global === 'true' ? 'Global' : 'Client-specific'}</Badge>
+                            {q.global === 'false' && q.clientName && (
+                              <Badge variant="secondary">Client: {q.clientName}</Badge>
+                            )}
                           </div>
                         </div>
                         <div className="flex space-x-2">
@@ -315,7 +356,7 @@ export function QuestionManager() {
                   value={question.questionType}
                   onValueChange={(value: QuestionType) => setQuestion({ ...question, questionType: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-64">
                     <SelectValue placeholder="Select question type" />
                   </SelectTrigger>
                   <SelectContent>
