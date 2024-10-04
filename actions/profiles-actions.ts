@@ -53,5 +53,32 @@ export async function deleteProfileAction(userId: string): Promise<ActionResult<
   }
 }
 
+export async function updateMembershipAction(userId: string, membership: "free" | "pro"): Promise<ActionResult<SelectProfile>> {
+  try {
+    const updatedProfile = await updateProfile(userId, { membership });
+    revalidatePath("/");
+    return { isSuccess: true, message: "Membership updated successfully", data: updatedProfile };
+  } catch (error) {
+    return { isSuccess: false, message: "Failed to update membership" };
+  }
+}
+
+export async function updateLastPaymentAction(
+  userId: string, 
+  amount: number, 
+  date: Date
+): Promise<ActionResult<SelectProfile>> {
+  try {
+    const updatedProfile = await updateProfile(userId, { 
+      lastPaymentAmount: amount.toString(),
+      lastPaymentDate: date
+    });
+    revalidatePath("/");
+    return { isSuccess: true, message: "Last payment updated successfully", data: updatedProfile };
+  } catch (error) {
+    return { isSuccess: false, message: "Failed to update last payment" };
+  }
+}
+
 
 

@@ -1,10 +1,16 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { auth } from "@clerk/nextjs/server";
+import { useAuth } from "@clerk/nextjs";
+import { useState } from "react";
+import { initializePaystackTransaction } from "@/actions/paystack-actions";
+import { useToast } from "@/components/ui/use-toast";
 
-export default async function PricingPage() {
-  const { userId } = auth();
+export default function PricingPage() {
+  const { userId } = useAuth();
+  const { toast } = useToast();
 
   return (
     <div className="container mx-auto py-12">
@@ -12,18 +18,18 @@ export default async function PricingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <PricingCard
           title="Monthly Plan"
-          price="$10"
+          price="₦5000"
           description="Billed monthly"
           buttonText="Subscribe Monthly"
-          buttonLink={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_MONTHLY || "#"}
+          amount={5000}
           userId={userId}
         />
         <PricingCard
           title="Yearly Plan"
-          price="$100"
+          price="₦50000"
           description="Billed annually"
           buttonText="Subscribe Yearly"
-          buttonLink={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_YEARLY || "#"}
+          amount={50000}
           userId={userId}
         />
       </div>
@@ -36,12 +42,47 @@ interface PricingCardProps {
   price: string;
   description: string;
   buttonText: string;
-  buttonLink: string;
-  userId: string | null;
+  amount: number;
+  userId: string | null | undefined;
 }
 
-function PricingCard({ title, price, description, buttonText, buttonLink, userId }: PricingCardProps) {
-  const finalButtonLink = userId ? `${buttonLink}?client_reference_id=${userId}` : buttonLink;
+function PricingCard({ title, price, description, buttonText, amount, userId }: PricingCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubscribe = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please sign in to subscribe",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await initializePaystackTransaction("user@example.com", amount, userId);
+      if (result.isSuccess && result.data) {
+        window.location.href = result.data.authorization_url;
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to initialize payment",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing payment:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="flex flex-col h-full">
@@ -55,14 +96,10 @@ function PricingCard({ title, price, description, buttonText, buttonLink, userId
       <CardFooter>
         <Button
           className="w-full"
-          asChild
+          onClick={handleSubscribe}
+          disabled={isLoading || !userId}
         >
-          <a
-            href={finalButtonLink}
-            className={cn("inline-flex items-center justify-center", finalButtonLink === "#" && "pointer-events-none opacity-50")}
-          >
-            {buttonText}
-          </a>
+          {isLoading ? "Processing..." : buttonText}
         </Button>
       </CardFooter>
     </Card>

@@ -22,6 +22,20 @@
       "when": 1727756202911,
       "tag": "0002_burly_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1727845421692,
+      "tag": "0003_organic_wallow",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1727845485724,
+      "tag": "0004_stale_frank_castle",
+      "breakpoints": true
     }
   ]
 }

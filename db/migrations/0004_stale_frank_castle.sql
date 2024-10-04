@@ -1,0 +1,1 @@
+ALTER TABLE "feedback_form_templates" ALTER COLUMN "question_ids" SET DEFAULT '{}';
