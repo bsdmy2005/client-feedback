@@ -15,18 +15,15 @@ export async function createFeedbackFormTemplate(
   clientId: string,
   name: string,
   recurrenceInterval: number,
-  startDate: Date,
-  questionIds: string[]
+  startDate: Date
 ): Promise<ActionResult<{ id: string }>> {
   try {
     logDbOperation("Insert", { table: "feedbackFormTemplates", clientId, name });
     const [newTemplate] = await db.insert(feedbackFormTemplatesTable).values({
       clientId,
       name,
-      recurrenceInterval: 7, // Default value, adjust as needed
-      startDate: new Date(), // Current date, adjust as needed
-      questionIds: [], // Empty array, adjust as needed
-      // Add any other required fields
+      recurrenceInterval,
+      startDate,
     }).returning({ id: feedbackFormTemplatesTable.id });
 
     return { isSuccess: true, message: "Feedback form template created successfully", data: { id: newTemplate.id } };
@@ -38,7 +35,7 @@ export async function createFeedbackFormTemplate(
 
 export async function updateFeedbackFormTemplate(
   id: string,
-  updates: Partial<{ name: string; recurrenceInterval: number; startDate: Date; questionIds: string[] }>
+  updates: Partial<{ name: string; recurrenceInterval: number; startDate: Date }>
 ): Promise<ActionResult<void>> {
   try {
     const updatesWithStringDate = {

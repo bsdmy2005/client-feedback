@@ -1,0 +1,1 @@
+ALTER TABLE "feedback_form_templates" DROP COLUMN IF EXISTS "question_ids";
