@@ -7,9 +7,12 @@ import { AddClientForm } from "./AddClientForm"
 import { QuestionManager } from "./QuestionManager"
 import { TemplateManager } from "./TemplateManager"
 import { UserAssignment } from "./UserAssignment"
+import { FeedbackFormManager } from "./FeedbackFormManager"
 import { MoonIcon, SunIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@clerk/nextjs"
+
+
 
 export default function AdminBoard() {
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -36,11 +39,12 @@ export default function AdminBoard() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <Tabs defaultValue="clients" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4 gap-4">
+              <TabsList className="grid w-full grid-cols-5 gap-4">
                 <TabsTrigger value="clients">Clients</TabsTrigger>
                 <TabsTrigger value="questions">Questions</TabsTrigger>
                 <TabsTrigger value="templates">Templates</TabsTrigger>
                 <TabsTrigger value="assignments">Assignments</TabsTrigger>
+                <TabsTrigger value="feedback-forms">Feedback Forms</TabsTrigger>
               </TabsList>
               <TabsContent value="clients" className="p-4 bg-card rounded-md">
                 <h2 className="text-2xl font-semibold mb-4">Manage Clients</h2>
@@ -57,6 +61,10 @@ export default function AdminBoard() {
               <TabsContent value="assignments" className="p-4 bg-card rounded-md">
                 <h2 className="text-2xl font-semibold mb-4">User Assignments</h2>
                 <UserAssignment />
+              </TabsContent>
+              <TabsContent value="feedback-forms" className="p-4 bg-card rounded-md">
+                <h2 className="text-2xl font-semibold mb-4">Manage Feedback Forms</h2>
+                <FeedbackFormManager />
               </TabsContent>
             </Tabs>
           </CardContent>

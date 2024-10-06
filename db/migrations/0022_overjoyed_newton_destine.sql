@@ -1,0 +1,1 @@
+ALTER TYPE "user_feedback_form_status" ADD VALUE 'submitted';

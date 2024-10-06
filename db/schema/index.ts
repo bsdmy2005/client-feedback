@@ -7,3 +7,5 @@ export * from "./template-questions-schema";
 export * from "./user-template-assignments-schema";
 export * from "./feedback-forms-schema";
 export * from "./overdue-feedback-assignments-schema";
+export * from "./form-answers-schema";
+export * from "./user-feedback-forms-schema";

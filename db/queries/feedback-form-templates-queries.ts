@@ -12,3 +12,4 @@ export const getTemplateById = async (id: string) => {
   const [template] = await db.select().from(feedbackFormTemplatesTable).where(eq(feedbackFormTemplatesTable.id, id));
   return template;
 };
+

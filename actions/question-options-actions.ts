@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { questionOptionsTable } from "@/db/schema/question-options-schema";
+import { QuestionOption, questionOptionsTable } from "@/db/schema/question-options-schema";
 import { getOptionsByQuestionId } from "@/db/queries/question-options-queries";
 import { ActionResult } from "@/types/actions/actions-types";
 import { eq } from 'drizzle-orm';
@@ -44,4 +44,13 @@ export async function deleteQuestionOption(id: string): Promise<ActionResult<voi
   }
 }
 
-export { getOptionsByQuestionId };
+export async function getQuestionOptionsByQuestionId(questionId: string): Promise<ActionResult<QuestionOption[]>> {
+  try {
+    const options = await getOptionsByQuestionId(questionId);
+    return { isSuccess: true, message: "Question options fetched successfully", data: options };
+  } catch (error) {
+    console.error("Failed to fetch question options:", error);
+    return { isSuccess: false, message: "Failed to fetch question options" };
+  }
+}
+

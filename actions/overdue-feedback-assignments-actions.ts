@@ -65,7 +65,7 @@ export async function updateOverdueFeedbackAssignments(): Promise<ActionResult<v
       const completedForm = await db.select()
         .from(feedbackFormsTable)
         .where(and(
-          eq(feedbackFormsTable.userId, assignment.userId),
+            
           eq(feedbackFormsTable.templateId, assignment.templateId),
           eq(feedbackFormsTable.status, "completed"),
           lt(feedbackFormsTable.dueDate, now)

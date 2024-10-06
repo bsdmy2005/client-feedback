@@ -89,7 +89,25 @@ export async function getAllTemplates(): Promise<ActionResult<Template[]>> {
 }
 
 // Wrap the imported function to add logging
-export async function getTemplateById(id: string): Promise<ActionResult<Template | null>> {
-  logDbOperation("Select", { table: "feedbackFormTemplates", id });
-  return await getTemplateById(id);
+
+
+// Add this function if it doesn't exist
+export async function getTemplateById(id: string): Promise<ActionResult<Template>> {
+  try {
+    const template = await db
+      .select()
+      .from(feedbackFormTemplatesTable)
+      .where(eq(feedbackFormTemplatesTable.id, id))
+      .limit(1)
+      .then(rows => rows[0] || null);
+
+    if (!template) {
+      return { isSuccess: false, message: "Template not found" };
+    }
+
+    return { isSuccess: true, data: template, message: "Template retrieved successfully" };
+  } catch (error) {
+    console.error("Failed to get template:", error);
+    return { isSuccess: false, message: "Failed to get template" };
+  }
 }

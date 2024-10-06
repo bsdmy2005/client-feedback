@@ -39,6 +39,7 @@ export function QuestionManager() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const { toast } = useToast();
+  const [bulkOptions, setBulkOptions] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,6 +68,16 @@ export function QuestionManager() {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
+  };
+
+  const handleBulkOptionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setBulkOptions(e.target.value);
+  };
+
+  const handleBulkOptionsSubmit = () => {
+    const newOptions = bulkOptions.split('\n').filter(option => option.trim() !== '');
+    setOptions(newOptions);
+    setBulkOptions("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -238,6 +249,19 @@ export function QuestionManager() {
                 {(question.questionType === "multiple_choice" || question.questionType === "drop_down") && (
                   <div className="space-y-2">
                     <Label>Options</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="bulkOptions">Bulk Add Options (one per line)</Label>
+                      <Textarea
+                        id="bulkOptions"
+                        value={bulkOptions}
+                        onChange={handleBulkOptionsChange}
+                        placeholder="Enter options, one per line"
+                        className="min-h-[100px]"
+                      />
+                      <Button type="button" onClick={handleBulkOptionsSubmit} className="w-full">
+                        Add Bulk Options
+                      </Button>
+                    </div>
                     {options.map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <Input
