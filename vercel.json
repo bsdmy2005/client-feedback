@@ -2,7 +2,7 @@
     "crons": [
        {
         "path": "/api/postmark/SendTestEmail",
-         "schedule": "45 4 * * *"
+         "schedule": "50 2 * * *"
       }
     ]
   }
