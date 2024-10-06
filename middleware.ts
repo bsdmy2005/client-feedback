@@ -2,7 +2,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher(["/notes(.*)"]);
-const isPublicRoute = createRouteMatcher(["/api/webhooks/clerk(.*)"]);
+const isPublicRoute = createRouteMatcher([
+  "/api/webhooks/clerk(.*)",
+  "/api/postmark/sendEmail"  // Add this line
+]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = auth();
