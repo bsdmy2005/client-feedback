@@ -1,8 +1,11 @@
 import { ArrowRight, BarChart2, Users, Lightbulb, MessageSquare, LucideIcon, Newspaper, TrendingUp, AlertTriangle, Clock, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { fetchLatestNews, NewsArticle } from '@/lib/fetch-news';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const latestNews = await fetchLatestNews();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <main className="container mx-auto px-4 py-16 max-w-7xl">
@@ -21,13 +24,20 @@ export default function HomePage() {
 
         <div className="flex justify-center mb-16">
           <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-            <Link href="/login?redirect_url=http%3A%2F%2Flocalhost%3A3000%2F">
+            <Link href="/sign-in">
               Submit Feedback <ArrowRight className="ml-2" />
             </Link>
           </Button>
         </div>
 
-        <ConsultantUpdates />
+        {latestNews.length > 0 ? (
+          <ConsultantUpdates latestNews={latestNews} />
+        ) : (
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-2xl font-semibold mb-2">Latest Business News</h2>
+            <p className="text-gray-600">Unable to fetch news at the moment. Please check back later.</p>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -84,43 +94,23 @@ const features = [
   }
 ];
 
-const ConsultantUpdates = () => (
+const ConsultantUpdates = ({ latestNews }: { latestNews: NewsArticle[] }) => (
   <div className="bg-white rounded-xl shadow-lg overflow-hidden">
     <h2 className="text-2xl font-semibold p-6 bg-blue-600 text-white flex items-center">
       <Newspaper className="w-6 h-6 mr-2" />
-      Latest Consultant Updates
+      Latest Business News
     </h2>
     <div className="divide-y divide-gray-200">
-      {updateItems.map((item, index) => (
+      {latestNews.map((article, index) => (
         <div key={index} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{item.title}</h3>
-          <p className="text-gray-600 mb-3">{item.summary}</p>
-          <span className="text-blue-600 font-medium">{item.consultant}</span>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{article.title}</h3>
+          <p className="text-gray-600 mb-3">{article.description}</p>
+          <div className="flex justify-between items-center">
+            <span className="text-blue-600 font-medium">{article.source.name}</span>
+            <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-700">Read more</a>
+          </div>
         </div>
       ))}
     </div>
   </div>
 );
-
-const updateItems = [
-  {
-    title: "New Integration Opportunity at FinCorp",
-    summary: "Identified potential for streamlining data processes, estimated 20% efficiency increase.",
-    consultant: "Alice Johnson"
-  },
-  {
-    title: "Risk Management Concerns at TechFin",
-    summary: "Observed outdated security protocols, recommending immediate review and update.",
-    consultant: "Bob Smith"
-  },
-  {
-    title: "Positive Team Morale at Project X",
-    summary: "Team reports high satisfaction with current project progress and client interaction.",
-    consultant: "Carol Zhang"
-  },
-  {
-    title: "Utilization Alert: Data Science Team",
-    summary: "Data science team nearing capacity, may need additional resources for upcoming projects.",
-    consultant: "David Patel"
-  }
-];
