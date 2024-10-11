@@ -14,6 +14,7 @@ import { getAssignmentsByUserIdAction,getAssignmentsByTemplateIdAction,getAllAss
 import { formAnswersTable } from "@/db/schema/form-answers-schema";
 import { getUserProfileById } from "@/actions/profiles-actions";
 import { getTemplateQuestionsWithDetails } from "@/db/queries/template-questions-queries";
+import OpenAI from 'openai';
 
 function logDbOperation(operation: string, details: any) {
   console.log(`DB Operation: ${operation}`, JSON.stringify(details, null, 2));
@@ -328,5 +329,48 @@ export async function getFeedbackFormResponses(formId: string): Promise<ActionRe
   } catch (error) {
     console.error("Failed to get feedback form responses:", error);
     return { isSuccess: false, message: "Failed to get feedback form responses" };
+  }
+}
+
+export async function generateExecutiveSummary(feedbackFormId: string): Promise<ActionResult<string>> {
+  try {
+    const responses = await getFeedbackFormResponses(feedbackFormId);
+    if (!responses.isSuccess || !responses.data) {
+      return { isSuccess: false, message: "Failed to fetch feedback responses" };
+    }
+
+    const feedbackData = responses.data.map(response => ({
+      user: response.userName,
+      submittedAt: response.submittedAt,
+      answers: response.answers
+    }));
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const prompt = `Analyze the following feedback data and generate an executive summary highlighting business opportunities, client issues, consultant performance, and other key insights:
+
+${JSON.stringify(feedbackData, null, 2)}
+
+Please structure the summary with the following sections:
+1. Overall Performance
+2. Business Opportunities
+3. Client Issues
+4. Consultant Performance
+5. Key Insights and Recommendations`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1000,
+    });
+
+    const summary = completion.choices[0].message.content;
+
+    return { isSuccess: true, data: summary || "", message: "Executive summary generated successfully" };
+  } catch (error) {
+    console.error("Failed to generate executive summary:", error);
+    return { isSuccess: false, message: "Failed to generate executive summary" };
   }
 }

@@ -10,13 +10,15 @@ import { updateFeedbackForm, deleteFeedbackForm, getFeedbackFormResponses } from
 import { getAllFeedbackFormsWithProgress } from "@/db/queries/feedback-forms-queries"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { TrashIcon, SearchIcon, EyeIcon, DownloadIcon } from "lucide-react"
+import { TrashIcon, SearchIcon, EyeIcon, DownloadIcon, FileTextIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FilterIcon } from "lucide-react"
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
+import { ExecutiveSummaryReport } from "./ExecutiveSummaryReport"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 type FeedbackFormWithProgress = FeedbackForm & { percentComplete: number }
 
@@ -26,6 +28,7 @@ export function FeedbackDashboard() {
   const [templateFilter, setTemplateFilter] = useState("")
   const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string[]>(["pending", "active", "overdue"])
+  const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -183,141 +186,165 @@ export function FeedbackDashboard() {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Feedback Dashboard</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-6">
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              className="pl-10"
-              placeholder="Filter by client name..."
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-            />
-          </div>
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              className="pl-10"
-              placeholder="Filter by template name..."
-              value={templateFilter}
-              onChange={(e) => setTemplateFilter(e.target.value)}
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <FilterIcon className="mr-2 h-4 w-4" />
-                Filter by Status
-                {statusFilter.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {statusFilter.length}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Select Statuses</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {["pending", "active", "overdue", "closed"].map((status) => (
-                <div key={status} className="flex items-center px-2 py-2">
-                  <Checkbox
-                    id={`status-${status}`}
-                    checked={statusFilter.includes(status)}
-                    onCheckedChange={() => handleStatusFilterChange(status)}
-                  />
-                  <label
-                    htmlFor={`status-${status}`}
-                    className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
-                  >
-                    {status}
-                  </label>
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Template Name</TableHead>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Actions</TableHead>
-                <TableHead>Download</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFeedbackForms.map((form) => (
-                <TableRow key={form.id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell>
-                    <Link href={`/admin/feedback/${form.id}`} className="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
-                      {form.templateName}
-                      <EyeIcon className="ml-2 h-4 w-4" />
-                    </Link>
-                  </TableCell>
-                  <TableCell>{form.clientName}</TableCell>
-                  <TableCell>{new Date(form.dueDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Select
-                      defaultValue={form.status}
-                      onValueChange={(value) => handleStatusChange(form.id, value)}
+    <div className="space-y-6">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Feedback Dashboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-6">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                className="pl-10"
+                placeholder="Filter by client name..."
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
+              />
+            </div>
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                className="pl-10"
+                placeholder="Filter by template name..."
+                value={templateFilter}
+                onChange={(e) => setTemplateFilter(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full md:w-auto">
+                  <FilterIcon className="mr-2 h-4 w-4" />
+                  Filter by Status
+                  {statusFilter.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {statusFilter.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Select Statuses</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {["pending", "active", "overdue", "closed"].map((status) => (
+                  <div key={status} className="flex items-center px-2 py-2">
+                    <Checkbox
+                      id={`status-${status}`}
+                      checked={statusFilter.includes(status)}
+                      onCheckedChange={() => handleStatusFilterChange(status)}
+                    />
+                    <label
+                      htmlFor={`status-${status}`}
+                      className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
                     >
-                      <SelectTrigger className={`w-[120px] ${getStatusColor(form.status)}`}>
-                        <SelectValue>{form.status}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="overdue">Overdue</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={form.percentComplete} className="w-[60px]" />
-                      <span>{form.percentComplete}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Link href={`/admin/feedback/${form.id}`}>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(form.id)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(form.id)}
-                    >
-                      <DownloadIcon className="h-4 w-4 mr-2" />
-                      CSV
-                    </Button>
-                  </TableCell>
+                      {status}
+                    </label>
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Template Name</TableHead>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Actions</TableHead>
+                  <TableHead>Download</TableHead>
+                  <TableHead>Summary</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {filteredFeedbackForms.map((form) => (
+                  <TableRow key={form.id} className="hover:bg-gray-50 transition-colors">
+                    <TableCell>
+                      <Link href={`/admin/feedback/${form.id}`} className="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                        {form.templateName}
+                        <EyeIcon className="ml-2 h-4 w-4" />
+                      </Link>
+                    </TableCell>
+                    <TableCell>{form.clientName}</TableCell>
+                    <TableCell>{new Date(form.dueDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Select
+                        defaultValue={form.status}
+                        onValueChange={(value) => handleStatusChange(form.id, value)}
+                      >
+                        <SelectTrigger className={`w-[120px] ${getStatusColor(form.status)}`}>
+                          <SelectValue>{form.status}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="overdue">Overdue</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Progress value={form.percentComplete} className="w-[60px]" />
+                        <span>{form.percentComplete}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Link href={`/admin/feedback/${form.id}`}>
+                          <Button variant="outline" size="sm">
+                            View
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(form.id)}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(form.id)}
+                      >
+                        <DownloadIcon className="h-4 w-4 mr-2" />
+                        CSV
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedFormId(form.id)}
+                      >
+                        <FileTextIcon className="h-4 w-4 mr-2" />
+                        Generate Summary
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={selectedFormId !== null} onOpenChange={() => setSelectedFormId(null)}>
+        <DialogContent className="max-w-4xl">
+          {selectedFormId && (
+            <ExecutiveSummaryReport 
+              feedbackFormId={selectedFormId} 
+              onClose={() => setSelectedFormId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
