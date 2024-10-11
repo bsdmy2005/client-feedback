@@ -59,6 +59,14 @@ export default function Component() {
                 <span>Submit Feedback</span>
               </Link>
 
+              <Link
+                href="/dashboard"
+                className="hover:text-primary flex items-center space-x-2 text-lg font-medium text-foreground"
+              >
+                <BarChartIcon className="h-6 w-6" />
+                <span>Dashboard</span>
+              </Link>
+
               {userIsAdmin && (
                 <Link
                   href="/admin"
@@ -117,6 +125,14 @@ export default function Component() {
               >
                 <ClipboardCheckIcon className="h-8 w-8" />
                 <span>Submit Feedback</span>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="block hover:text-primary flex items-center space-x-2 text-lg text-foreground"
+                onClick={toggleMenu}
+              >
+                <BarChartIcon className="h-8 w-8" />
+                <span>Dashboard</span>
               </Link>
               {userIsAdmin && (
                 <Link
