@@ -67,7 +67,7 @@ export async function updateOverdueFeedbackAssignments(): Promise<ActionResult<v
         .where(and(
             
           eq(feedbackFormsTable.templateId, assignment.templateId),
-          eq(feedbackFormsTable.status, "completed"),
+          eq(feedbackFormsTable.status, "closed"), // Change "completed" to "closed"
           lt(feedbackFormsTable.dueDate, now)
         ))
         .limit(1);
