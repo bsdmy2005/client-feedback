@@ -2,6 +2,7 @@ import { ArrowRight, BarChart2, Users, Lightbulb, MessageSquare, LucideIcon, New
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { fetchLatestNews, NewsArticle } from '@/lib/fetch-news';
+import { SignInButton } from "@clerk/nextjs";
 
 export default async function HomePage() {
   const latestNews = await fetchLatestNews();
@@ -23,11 +24,11 @@ export default async function HomePage() {
         </div>
 
         <div className="flex justify-center mb-16">
-          <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-            <Link href="/sign-in">
+          <SignInButton mode="modal">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
               Submit Feedback <ArrowRight className="ml-2" />
-            </Link>
-          </Button>
+            </Button>
+          </SignInButton>
         </div>
 
         {latestNews.length > 0 ? (

@@ -6,24 +6,11 @@ import { ClipboardCheckIcon, HomeIcon, BarChartIcon, Menu, X } from "lucide-reac
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { isAdmin } from "@/db/queries/profiles-queries";
 import { useEffect } from "react";
 
-export default function Component() {
+export default function Header({ isAdmin }: { isAdmin: boolean }) {
   const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [userIsAdmin, setUserIsAdmin] = useState(false);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user?.id) {
-        const adminStatus = await isAdmin(user.id);
-        setUserIsAdmin(adminStatus);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -59,7 +46,7 @@ export default function Component() {
                 <span>Submit Feedback</span>
               </Link>
 
-              {userIsAdmin && (
+              {isAdmin && (
                 <>
                   <Link
                     href="/dashboard"
@@ -128,7 +115,7 @@ export default function Component() {
                 <ClipboardCheckIcon className="h-8 w-8" />
                 <span>Submit Feedback</span>
               </Link>
-              {userIsAdmin && (
+              {isAdmin && (
                 <>
                   <Link
                     href="/dashboard"

@@ -8,6 +8,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { isAdmin } from "@/db/queries/profiles-queries";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,11 +19,14 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { userId } = auth();
+  let userIsAdmin = false;
 
   if (userId) {
     const res = await getProfileByUserIdAction(userId);
     if (!res.data) {
       await createProfile({ userId });
+    } else {
+      userIsAdmin = await isAdmin(userId);
     }
   }
 
@@ -35,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             defaultTheme="light"
             disableTransitionOnChange
           >
-            <Header />
+            <Header isAdmin={userIsAdmin} />
             {children}
             <Toaster />
           </Providers>
