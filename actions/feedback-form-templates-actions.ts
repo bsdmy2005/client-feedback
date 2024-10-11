@@ -5,6 +5,7 @@ import { db } from "@/db/db";
 import { feedbackFormTemplatesTable, Template } from "@/db/schema/feedback-form-templates-schema";
 import { 	ActionResult } from "@/types/actions/actions-types";
 import { eq } from "drizzle-orm";
+import { templateQuestionsTable } from "@/db/schema/template-questions-schema";
 
 // Helper function to log database operations
 function logDbOperation(operation: string, details: any) {
@@ -57,12 +58,23 @@ export async function updateFeedbackFormTemplate(
 
 export async function deleteFeedbackFormTemplate(id: string): Promise<ActionResult<void>> {
   try {
-    logDbOperation("Delete", { table: "feedbackFormTemplates", id });
-    await db.delete(feedbackFormTemplatesTable).where(eq(feedbackFormTemplatesTable.id, id));
-    return { isSuccess: true, message: "Feedback form template deleted successfully" };
+    // Start a transaction
+    await db.transaction(async (tx) => {
+      // First, delete entries from templateQuestionsTable
+      logDbOperation("Delete", { table: "templateQuestions", templateId: id });
+      await tx.delete(templateQuestionsTable)
+        .where(eq(templateQuestionsTable.templateId, id));
+
+      // Then, delete the feedback form template
+      logDbOperation("Delete", { table: "feedbackFormTemplates", id });
+      await tx.delete(feedbackFormTemplatesTable)
+        .where(eq(feedbackFormTemplatesTable.id, id));
+    });
+
+    return { isSuccess: true, message: "Feedback form template and associated questions deleted successfully" };
   } catch (error) {
-    console.error("Failed to delete feedback form template:", error);
-    return { isSuccess: false, message: "Failed to delete feedback form template" };
+    console.error("Failed to delete feedback form template and associated questions:", error);
+    return { isSuccess: false, message: "Failed to delete feedback form template and associated questions" };
   }
 }
 

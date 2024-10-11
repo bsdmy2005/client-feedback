@@ -78,9 +78,11 @@ export default async function FeedbackFormPage({ params }: { params: { id: strin
           questionTheme: q.questionDetails.questionTheme,
           options: q.questionDetails.options,
           templateId: form.templateId,
+          order: q.order, // Add this line to include the order
         }))} 
         userId={userId}
       />
     </div>
   );
 }
+

@@ -1,0 +1,1 @@
+ALTER TABLE "template_questions" ADD COLUMN "order" integer DEFAULT 0;

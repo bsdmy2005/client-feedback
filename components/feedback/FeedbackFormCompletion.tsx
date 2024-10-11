@@ -29,6 +29,7 @@ interface Question {
   questionType: string;
   questionTheme: string;
   options: QuestionOption[];
+  order: number; // Add this line
 }
 
 interface FeedbackFormCompletionProps {
@@ -50,8 +51,14 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
     setProgress((completedQuestions / questions.length) * 100);
   }, [answers, questions]);
 
-  const handleAnswerChange = (questionId: string, value: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+  const handleAnswerChange = (questionId: string, value: string, questionType: string) => {
+    if (questionType === 'multiple_choice' || questionType === 'drop_down') {
+      const question = questions.find(q => q.questionId === questionId);
+      const selectedOption = question?.options.find(opt => opt.id === value);
+      setAnswers(prev => ({ ...prev, [questionId]: selectedOption?.optionText || value }));
+    } else {
+      setAnswers(prev => ({ ...prev, [questionId]: value }));
+    }
   };
 
   const toggleQuestion = (questionId: string) => {
@@ -114,7 +121,7 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
             className="w-full min-h-[8rem] p-2 border rounded-md resize-none"
             value={answers[question.questionId] || ''}
             onChange={(e) => {
-              handleAnswerChange(question.questionId, e.target.value);
+              handleAnswerChange(question.questionId, e.target.value, 'free_text');
               e.target.style.height = 'auto';
               e.target.style.height = `${e.target.scrollHeight}px`;
             }}
@@ -123,8 +130,8 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
       case 'multiple_choice':
         return (
           <RadioGroup
-            onValueChange={(value) => handleAnswerChange(question.questionId, value)}
-            value={answers[question.questionId]}
+            onValueChange={(value) => handleAnswerChange(question.questionId, value, 'multiple_choice')}
+            value={question.options.find(opt => opt.optionText === answers[question.questionId])?.id || ''}
           >
             {question.options.map(option => (
               <div key={option.id} className="flex items-center space-x-2">
@@ -137,8 +144,8 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
       case 'drop_down':
         return (
           <Select
-            onValueChange={(value) => handleAnswerChange(question.questionId, value)}
-            value={answers[question.questionId]}
+            onValueChange={(value) => handleAnswerChange(question.questionId, value, 'drop_down')}
+            value={question.options.find(opt => opt.optionText === answers[question.questionId])?.id || ''}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select an option" />
@@ -158,6 +165,9 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
   };
 
   const allQuestionsAnswered = questions.every(q => answers[q.questionId]);
+
+  // Sort questions by order
+  const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
 
   return (
     <div className="space-y-6">
@@ -179,7 +189,7 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
           <Label>Progress</Label>
           <Progress value={progress} className="w-full" />
         </div>
-        {questions.map((question, index) => (
+        {sortedQuestions.map((question, index) => (
           <Collapsible
             key={question.questionId}
             open={openQuestions.includes(question.questionId)}

@@ -53,3 +53,10 @@ export async function getTemplateQuestionsWithDetails(templateId: string): Promi
 
   return questionsWithDetails;
 }
+
+export async function updateTemplateQuestionOrder(templateId: string, questionId: string, order: number): Promise<void> {
+  await db.update(templateQuestionsTable)
+    .set({ order })
+    .where(and(eq(templateQuestionsTable.templateId, templateId), eq(templateQuestionsTable.questionId, questionId)));
+}
+
