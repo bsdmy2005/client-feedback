@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/types/actions/actions-types";
 import { NewUserFeedbackForm, UserFeedbackForm } from "@/db/schema/user-feedback-forms-schema";
 import * as queries from "@/db/queries/user-feedback-forms-queries";
+import { getUserFeedbackFormsByFeedbackFormId } from "@/db/queries/user-feedback-forms-queries";
 
 export async function createUserFeedbackFormAction(data: NewUserFeedbackForm): Promise<ActionResult<UserFeedbackForm>> {
   try {
@@ -68,5 +69,25 @@ export async function getUserFeedbackFormsWithDetailsAction(userId: string): Pro
   } catch (error) {
     console.error("Failed to get user feedback forms with details:", error);
     return { isSuccess: false, message: "Failed to get user feedback forms with details" };
+  }
+}
+
+export async function getUserFeedbackForms(feedbackFormId: string): Promise<ActionResult<UserFeedbackForm[]>> {
+  try {
+    const userForms = await getUserFeedbackFormsByFeedbackFormId(feedbackFormId);
+    return { isSuccess: true, message: "User feedback forms retrieved successfully", data: userForms };
+  } catch (error) {
+    console.error("Error getting user feedback forms:", error);
+    return { isSuccess: false, message: "Failed to get user feedback forms" };
+  }
+}
+
+export async function getUserFeedbackFormByUserAndFormId(userId: string, feedbackFormId: string): Promise<ActionResult<UserFeedbackForm | null>> {
+  try {
+    const userFeedbackForm = await queries.getUserFeedbackFormByUserAndFormId(userId, feedbackFormId);
+    return { isSuccess: true, data: userFeedbackForm, message: "User feedback form retrieved successfully" };
+  } catch (error) {
+    console.error("Failed to get user feedback form:", error);
+    return { isSuccess: false, message: "Failed to get user feedback form" };
   }
 }

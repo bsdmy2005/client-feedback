@@ -11,6 +11,9 @@ import { getTemplateById } from "@/db/queries/feedback-form-templates-queries";
 import { userFeedbackFormsTable } from "@/db/schema/user-feedback-forms-schema";
 import { createUserFeedbackFormAction } from "@/actions/user-feedback-forms-actions";
 import { getAssignmentsByUserIdAction,getAssignmentsByTemplateIdAction,getAllAssignmentsAction } from "@/actions/user-template-assignments-actions";
+import { formAnswersTable } from "@/db/schema/form-answers-schema";
+import { getUserProfileById } from "@/actions/profiles-actions";
+import { getTemplateQuestionsWithDetails } from "@/db/queries/template-questions-queries";
 
 function logDbOperation(operation: string, details: any) {
   console.log(`DB Operation: ${operation}`, JSON.stringify(details, null, 2));
@@ -263,5 +266,67 @@ export async function getFeedbackFormById(id: string): Promise<ActionResult<Feed
   } catch (error) {
     console.error("Failed to get feedback form:", error);
     return { isSuccess: false, message: "Failed to get feedback form" };
+  }
+}
+
+export async function getFeedbackFormDetails(id: string): Promise<ActionResult<FeedbackForm>> {
+  try {
+    const formResult = await getFeedbackFormById(id);
+    if (!formResult.isSuccess || !formResult.data) {
+      return { isSuccess: false, message: "Feedback form not found" };
+    }
+    return { isSuccess: true, message: "Feedback form details retrieved successfully", data: formResult.data };
+  } catch (error) {
+    console.error("Error getting feedback form details:", error);
+    return { isSuccess: false, message: "Failed to get feedback form details" };
+  }
+}
+
+export async function getFeedbackFormResponses(formId: string): Promise<ActionResult<any[]>> {
+  try {
+    // Fetch the feedback form to get the template ID
+    const feedbackForm = await db.select().from(feedbackFormsTable).where(eq(feedbackFormsTable.id, formId)).limit(1);
+    if (feedbackForm.length === 0) {
+      return { isSuccess: false, message: "Feedback form not found" };
+    }
+
+    // Fetch questions for this template
+    const questions = await getTemplateQuestionsWithDetails(feedbackForm[0].templateId);
+    const questionMap = new Map(questions.map(q => [q.questionDetails.id, q.questionDetails.questionText]));
+
+    // Fetch user feedback forms for this feedback form
+    const userForms = await db.select().from(userFeedbackFormsTable)
+      .where(eq(userFeedbackFormsTable.feedbackFormId, formId));
+
+    // Fetch responses for each user feedback form
+    const responses = await Promise.all(userForms.map(async (userForm) => {
+      const formAnswer = await db.select().from(formAnswersTable)
+        .where(eq(formAnswersTable.formuserId, userForm.id))
+        .limit(1);
+
+      const userProfile = await getUserProfileById(userForm.userId);
+
+      const answers = formAnswer[0]?.answers as Record<string, string> || {};
+      const formattedAnswers: Record<string, string> = {};
+      
+      for (const [questionId, answer] of Object.entries(answers)) {
+        const questionText = questionMap.get(questionId) || 'Unknown Question';
+        // Preserve the full text of the answer, including any formatting
+        formattedAnswers[questionText] = answer;
+      }
+
+      return {
+        userName: userProfile.isSuccess && userProfile.data 
+          ? `${userProfile.data.firstName} ${userProfile.data.lastName}`
+          : 'Unknown User',
+        submittedAt: formAnswer[0]?.submittedAt || new Date(),
+        answers: formattedAnswers
+      };
+    }));
+
+    return { isSuccess: true, data: responses, message: "Responses retrieved successfully" };
+  } catch (error) {
+    console.error("Failed to get feedback form responses:", error);
+    return { isSuccess: false, message: "Failed to get feedback form responses" };
   }
 }

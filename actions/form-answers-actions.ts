@@ -1,6 +1,6 @@
 "use server";
 
-import { createFormAnswer, getFormAnswersByUserId,  getFormAnswersByFormUserId } from "@/db/queries/form-answers-queries";
+import { createFormAnswer, getFormAnswersByUserId, getFormAnswersByFormUserId, getFormAnswersByFeedbackFormId } from "@/db/queries/form-answers-queries";
 import { NewFormAnswer, FormAnswer } from "@/db/schema/form-answers-schema";
 import { ActionResult } from "@/types/actions/actions-types";
 import { revalidatePath } from "next/cache";
@@ -82,4 +82,14 @@ export async function deleteSubmission(formId: string) {
       .set({ status: "pending" })
       .where(eq(userFeedbackFormsTable.id, formId));
   });
+}
+
+export async function getFormAnswers(feedbackFormId: string): Promise<ActionResult<FormAnswer[]>> {
+  try {
+    const answers = await getFormAnswersByFeedbackFormId(feedbackFormId);
+    return { isSuccess: true, message: "Form answers retrieved successfully", data: answers };
+  } catch (error) {
+    console.error("Error getting form answers:", error);
+    return { isSuccess: false, message: "Failed to get form answers" };
+  }
 }

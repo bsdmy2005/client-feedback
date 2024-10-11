@@ -6,18 +6,22 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
 import { FeedbackForm } from "@/db/schema/feedback-forms-schema"
-import { updateFeedbackForm, deleteFeedbackForm } from "@/actions/feedback-forms-actions"
-import { getAllFeedbackForms } from "@/db/queries/feedback-forms-queries"
+import { updateFeedbackForm, deleteFeedbackForm, getFeedbackFormResponses } from "@/actions/feedback-forms-actions"
+import { getAllFeedbackFormsWithProgress } from "@/db/queries/feedback-forms-queries"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { TrashIcon, SearchIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge";
+import { TrashIcon, SearchIcon, EyeIcon, DownloadIcon } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FilterIcon } from "lucide-react"
+import Link from "next/link"
+import { Progress } from "@/components/ui/progress"
+
+type FeedbackFormWithProgress = FeedbackForm & { percentComplete: number }
 
 export function FeedbackDashboard() {
-  const [feedbackForms, setFeedbackForms] = useState<FeedbackForm[]>([])
+  const [feedbackForms, setFeedbackForms] = useState<FeedbackFormWithProgress[]>([])
   const [clientFilter, setClientFilter] = useState("")
   const [templateFilter, setTemplateFilter] = useState("")
   const { toast } = useToast()
@@ -29,7 +33,7 @@ export function FeedbackDashboard() {
 
   const fetchData = async () => {
     try {
-      const formsResult = await getAllFeedbackForms()
+      const formsResult = await getAllFeedbackFormsWithProgress()
       setFeedbackForms(formsResult)
     } catch (error) {
       toast({
@@ -105,10 +109,83 @@ export function FeedbackDashboard() {
     )
   }
 
+  const handleDownload = async (formId: string) => {
+    try {
+      const responses = await getFeedbackFormResponses(formId);
+      if (responses.isSuccess && responses.data) {
+        const csvContent = generateCSV(responses.data);
+        downloadCSV(csvContent, `feedback_responses_${formId}.csv`);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to download responses",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading responses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download responses",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateCSV = (responses: any[]) => {
+    if (responses.length === 0) return '';
+
+    const allQuestions = new Set<string>();
+    responses.forEach(response => {
+      Object.keys(response.answers).forEach(question => allQuestions.add(question));
+    });
+
+    const questions = Array.from(allQuestions);
+    const headers = ['User', 'Submission Date', ...questions];
+    const csvRows = [headers.map(escapeCSVField).join(',')];
+
+    responses.forEach(response => {
+      const submissionDate = new Date(response.submittedAt).toLocaleString();
+      const row = [
+        response.userName,
+        submissionDate,
+        ...questions.map(q => escapeCSVField(response.answers[q] || ''))
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    return csvRows.join('\n');
+  };
+
+  const escapeCSVField = (field: string): string => {
+    // If the field contains commas, newlines, or double quotes, enclose it in double quotes
+    if (/[",\n\r]/.test(field)) {
+      // Replace any double quotes with two double quotes
+      return `"${field.replace(/"/g, '""')}"`;
+    }
+    return field;
+  };
+
+  const downloadCSV = (content: string, fileName: string) => {
+    // Add BOM to ensure Excel recognizes the file as UTF-8
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Feedback Dashboard</CardTitle>
+        <CardTitle className="text-2xl font-bold">Feedback Dashboard</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-6">
@@ -171,13 +248,20 @@ export function FeedbackDashboard() {
                 <TableHead>Client Name</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Progress</TableHead>
                 <TableHead>Actions</TableHead>
+                <TableHead>Download</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredFeedbackForms.map((form) => (
-                <TableRow key={form.id}>
-                  <TableCell>{form.templateName}</TableCell>
+                <TableRow key={form.id} className="hover:bg-gray-50 transition-colors">
+                  <TableCell>
+                    <Link href={`/admin/feedback/${form.id}`} className="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                      {form.templateName}
+                      <EyeIcon className="ml-2 h-4 w-4" />
+                    </Link>
+                  </TableCell>
                   <TableCell>{form.clientName}</TableCell>
                   <TableCell>{new Date(form.dueDate).toLocaleDateString()}</TableCell>
                   <TableCell>
@@ -197,12 +281,35 @@ export function FeedbackDashboard() {
                     </Select>
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={form.percentComplete} className="w-[60px]" />
+                      <span>{form.percentComplete}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Link href={`/admin/feedback/${form.id}`}>
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(form.id)}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(form.id)}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(form.id)}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <DownloadIcon className="h-4 w-4 mr-2" />
+                      CSV
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -4,6 +4,9 @@ import { createProfile, deleteProfile, getAllProfiles, getProfileByUserId, updat
 import { InsertProfile, SelectProfile } from "@/db/schema/profiles-schema";
 import { ActionResult } from "@/types/actions/actions-types";
 import { revalidatePath } from "next/cache";
+import { db } from "@/db/db";
+import { profilesTable } from "@/db/schema/profiles-schema";
+import { eq } from "drizzle-orm";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionResult<SelectProfile>> {
   try {
@@ -77,6 +80,37 @@ export async function updateLastPaymentAction(
     return { isSuccess: true, message: "Last payment updated successfully", data: updatedProfile };
   } catch (error) {
     return { isSuccess: false, message: "Failed to update last payment" };
+  }
+}
+
+export async function getUserProfileById(userId: string): Promise<ActionResult<{ firstName: string; lastName: string }>> {
+  try {
+    const profile = await db.select({
+      firstName: profilesTable.firstName,
+      lastName: profilesTable.lastName,
+    })
+    .from(profilesTable)
+    .where(eq(profilesTable.userId, userId))
+    .limit(1);
+
+    if (profile.length === 0) {
+      return { isSuccess: false, message: "User profile not found" };
+    }
+
+    const { firstName, lastName } = profile[0];
+
+    // Handle potentially null values
+    const safeFirstName = firstName || "";
+    const safeLastName = lastName || "";
+
+    return { 
+      isSuccess: true, 
+      data: { firstName: safeFirstName, lastName: safeLastName }, 
+      message: "User profile retrieved successfully" 
+    };
+  } catch (error) {
+    console.error("Failed to get user profile:", error);
+    return { isSuccess: false, message: "Failed to get user profile" };
   }
 }
 

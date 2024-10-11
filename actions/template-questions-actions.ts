@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { templateQuestionsTable } from "@/db/schema/template-questions-schema";
 import { ActionResult } from "@/types/actions/actions-types";
 import { eq, and } from "drizzle-orm";
-import { getTemplateQuestions, addTemplateQuestion, updateTemplateQuestionOrder } from "@/db/queries/template-questions-queries";
+import { getTemplateQuestions, addTemplateQuestion, updateTemplateQuestionOrder, getTemplateQuestionsWithDetails } from "@/db/queries/template-questions-queries";
 
 export async function getTemplateQuestionsAction(templateId: string): Promise<ActionResult<any[]>> {
   try {
@@ -57,3 +57,4 @@ export async function removeTemplateQuestionAction(templateId: string, questionI
     return { isSuccess: false, message: "Failed to remove question from template" };
   }
 }
+

@@ -60,3 +60,7 @@ export const getUserFeedbackFormsWithDetails = async (userId: string): Promise<U
   return userFeedbackForms.map(({ user_feedback_forms }) => user_feedback_forms);
 };
 
+export async function getUserFeedbackFormsByFeedbackFormId(feedbackFormId: string) {
+  return db.select().from(userFeedbackFormsTable).where(eq(userFeedbackFormsTable.feedbackFormId, feedbackFormId));
+}
+

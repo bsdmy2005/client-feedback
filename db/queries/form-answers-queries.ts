@@ -18,3 +18,7 @@ export const getFormAnswersByUserId = async (userId: string): Promise<FormAnswer
 export const getFormAnswersByFormUserId = async (formUserId: string): Promise<FormAnswer[]> => {
   return db.select().from(formAnswersTable).where(eq(formAnswersTable.formuserId, formUserId));
 };
+
+export async function getFormAnswersByFeedbackFormId(feedbackFormId: string) {
+  return db.select().from(formAnswersTable).where(eq(formAnswersTable.formuserId, feedbackFormId));
+}
