@@ -37,6 +37,7 @@ export default async function FeedbackFormDetailsPage({ params }: { params: { id
         <CardContent>
           <p><strong>Due Date:</strong> {new Date(form.dueDate).toLocaleDateString()}</p>
           <p><strong>Status:</strong> {form.status}</p>
+          {/* Removed the display of form ID */}
         </CardContent>
       </Card>
       
