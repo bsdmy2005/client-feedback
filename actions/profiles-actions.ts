@@ -84,6 +84,7 @@ export async function updateLastPaymentAction(
 }
 
 export async function getUserProfileById(userId: string): Promise<ActionResult<{ firstName: string; lastName: string }>> {
+  console.log(`Attempting to fetch profile for user ID: ${userId}`);
   try {
     const profile = await db.select({
       firstName: profilesTable.firstName,
@@ -93,7 +94,10 @@ export async function getUserProfileById(userId: string): Promise<ActionResult<{
     .where(eq(profilesTable.userId, userId))
     .limit(1);
 
+    console.log(`Query result for user ID ${userId}:`, profile);
+
     if (profile.length === 0) {
+      console.log(`No profile found for user ID: ${userId}`);
       return { isSuccess: false, message: "User profile not found" };
     }
 
@@ -103,13 +107,15 @@ export async function getUserProfileById(userId: string): Promise<ActionResult<{
     const safeFirstName = firstName || "";
     const safeLastName = lastName || "";
 
+    console.log(`Profile retrieved for user ID ${userId}: ${safeFirstName} ${safeLastName}`);
+
     return { 
       isSuccess: true, 
       data: { firstName: safeFirstName, lastName: safeLastName }, 
       message: "User profile retrieved successfully" 
     };
   } catch (error) {
-    console.error("Failed to get user profile:", error);
+    console.error(`Error fetching profile for user ID ${userId}:`, error);
     return { isSuccess: false, message: "Failed to get user profile" };
   }
 }

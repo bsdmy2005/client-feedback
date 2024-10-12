@@ -1,7 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { updateProfileAction } from '@/actions/profiles-actions'
+import { updateProfileAction, createProfileAction , getUserProfileById} from '@/actions/profiles-actions'
 
 import * as svix from 'svix';
 
@@ -59,22 +59,43 @@ export async function POST(req: Request) {
     const firstName = evt.data.first_name
     const lastName = evt.data.last_name
 
-    try {
-      const result = await updateProfileAction(userId, {
-        firstName,
-        lastName,
-        email,
-      });
+    console.log(`Processing user.created event for user: ${userId}`);
 
-      if (result.isSuccess) {
-        console.log('Profile updated successfully for user:', userId)
+    try {
+      const existingUserResult = await getUserProfileById(userId);
+
+      if (existingUserResult.isSuccess && existingUserResult.data) {
+        console.log(`Updating profile for existing user: ${userId}`);
+        const updateResult = await updateProfileAction(userId, {
+          firstName,
+          lastName,
+          email,
+        });
+
+        if (!updateResult.isSuccess) {
+          console.error(`Failed to update profile for user ${userId}: ${updateResult.message}`);
+          return new Response('Error updating profile', { status: 500 });
+        }
       } else {
-        console.error('Failed to update profile:', result.message)
-        return new Response('Error updating profile', { status: 500 })
+        console.log(`Creating new profile for user: ${userId}`);
+        const createResult = await createProfileAction({
+          userId,
+          firstName,
+          lastName,
+          email,
+        });
+
+        if (!createResult.isSuccess) {
+          console.error(`Failed to create new profile for user ${userId}: ${createResult.message}`);
+          return new Response('Error creating new profile', { status: 500 });
+        }
       }
+
+      console.log(`Profile handled successfully for user: ${userId}`);
+      return new Response('', { status: 200 });
     } catch (error) {
-      console.error('Error updating profile:', error)
-      return new Response('Error updating profile', { status: 500 })
+      console.error(`Error handling profile for user ${userId}:`, error);
+      return new Response('Error handling profile', { status: 500 });
     }
   }
 
