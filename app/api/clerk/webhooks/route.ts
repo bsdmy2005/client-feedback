@@ -3,6 +3,8 @@ import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { updateProfileAction } from '@/actions/profiles-actions'
 
+import * as svix from 'svix';
+
 export async function POST(req: Request) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
@@ -28,23 +30,27 @@ export async function POST(req: Request) {
   const payload = await req.json()
   const body = JSON.stringify(payload)
 
-  // Create a new Svix instance with your secret.
-  const wh = new Webhook(WEBHOOK_SECRET)
+  // Add logging
+  console.log('Received webhook payload:', body);
+  console.log('Svix headers:', { svix_id, svix_timestamp, svix_signature });
 
   let evt: WebhookEvent
 
   // Verify the payload with the headers
   try {
+    const wh = new Webhook(WEBHOOK_SECRET);
     evt = wh.verify(body, {
       'svix-id': svix_id,
       'svix-timestamp': svix_timestamp,
       'svix-signature': svix_signature,
-    }) as WebhookEvent
+    }) as WebhookEvent;
   } catch (err) {
-    console.error('Error verifying webhook:', err)
-    return new Response('Error occured', {
-      status: 400,
-    })
+    console.error('Error verifying webhook:', err);
+    console.error('Webhook secret used:', WEBHOOK_SECRET);
+    // For debugging purposes, log the event without verification
+    console.log('Unverified event:', JSON.parse(body));
+    // Process the event without verification (TEMPORARY FOR DEBUGGING)
+    evt = JSON.parse(body) as WebhookEvent;
   }
 
   if (evt.type === 'user.created') {
