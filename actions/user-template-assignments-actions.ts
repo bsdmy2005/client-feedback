@@ -10,6 +10,8 @@ import { eq, and } from "drizzle-orm";
 import { feedbackFormTemplatesTable } from "@/db/schema/feedback-form-templates-schema";
 import { userFeedbackFormsTable } from "@/db/schema/user-feedback-forms-schema";
 import { feedbackFormsTable } from "@/db/schema/feedback-forms-schema";
+import { deleteUserFeedbackForm } from "@/db/queries/user-feedback-forms-queries";
+import { deleteUserPendingFeedbackFormsByUserAndTemplateId } from "@/db/queries/user-feedback-forms-queries";
 
 type UserAssignment = {
   userId: string;
@@ -146,5 +148,23 @@ export async function assignUsersToTemplate(templateId: string, users: UserAssig
   } catch (error) {
     console.error("Failed to assign users to template:", error);
     return { isSuccess: false, message: "Failed to assign users to template"};
+  }
+}
+
+export async function removeUserFromTemplateAssignment(userId: string, templateId: string): Promise<ActionResult<void>> {
+  try {
+    await db.transaction(async (tx) => {
+      // Delete the user-template assignment
+      await deleteAssignment(userId, templateId)
+
+      // Delete only pending user feedback forms
+      await deleteUserPendingFeedbackFormsByUserAndTemplateId(userId, templateId)
+    })
+
+    revalidatePath("/")
+    return { isSuccess: true, message: "User removed from template assignment successfully" }
+  } catch (error) {
+    console.error("Failed to remove user from template assignment:", error)
+    return { isSuccess: false, message: "Failed to remove user from template assignment" }
   }
 }

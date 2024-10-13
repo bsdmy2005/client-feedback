@@ -6,7 +6,7 @@ import { ClipboardCheckIcon, HomeIcon, BarChartIcon, Menu, X } from "lucide-reac
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function Header({ isAdmin }: { isAdmin: boolean }) {
   const { user } = useUser();
@@ -78,6 +78,7 @@ export default function Header({ isAdmin }: { isAdmin: boolean }) {
               <span className="text-sm font-medium text-foreground">
                 Welcome, {user?.firstName || 'User'}
               </span>
+              <NotificationBell />
               <SignOutButton>
                 <Button variant="outline">Sign Out</Button>
               </SignOutButton>

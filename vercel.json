@@ -1,8 +1,8 @@
 {
     "crons": [
        {
-        "path": "/api/postmark/SendTestEmail",
-         "schedule": "50 2 * * *"
+        "path": "/api/cron/daily",
+         "schedule": "0 0 * * *"
       }
     ]
   }

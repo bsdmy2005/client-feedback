@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher(["/notes(.*)", "/dashboard(.*)"]);
 const isPublicRoute = createRouteMatcher([
   "/api/webhooks/clerk(.*)",
-  "/api/postmark/sendEmail"  // Add this line
+  "/api/postmark/sendEmail",
+  "/api/cron/daily"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

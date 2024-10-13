@@ -17,6 +17,7 @@ import { CheckCircle2 } from "lucide-react";
 import { updateUserFeedbackFormAction } from "@/actions/user-feedback-forms-actions";
 import { updateFeedbackFormTemplate } from "@/actions/feedback-form-templates-actions";
 import { format } from "date-fns";
+import { completeUserFeedbackFormAction } from '@/actions/user-feedback-forms-actions';
 
 interface QuestionOption {
   id: string;
@@ -69,8 +70,16 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (form.status === 'closed') {
+      toast({
+        title: "Error",
+        description: "This form is closed and cannot be completed.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -111,6 +120,21 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
     }
 
     setIsSubmitting(false);
+
+    // After successful submission, complete the form
+    const completeResult = await completeUserFeedbackFormAction(form.id);
+    if (completeResult.isSuccess) {
+      toast({
+        title: "Success",
+        description: "Form completed successfully!",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: completeResult.message || "Failed to complete the form.",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderQuestionInput = (question: Question) => {
@@ -168,6 +192,14 @@ export default function FeedbackFormCompletion({ form, questions, userId }: Feed
 
   // Sort questions by order
   const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+
+  if (form.status === 'closed') {
+    return (
+      <div className="bg-gray-100 p-4 rounded-md">
+        <p className="text-lg font-semibold">This form is closed and can no longer be completed.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

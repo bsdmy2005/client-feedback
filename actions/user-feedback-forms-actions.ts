@@ -91,3 +91,46 @@ export async function getUserFeedbackFormByUserAndFormId(userId: string, feedbac
     return { isSuccess: false, message: "Failed to get user feedback form" };
   }
 }
+
+export async function getPendingFormsCountAction(userId: string): Promise<ActionResult<number>> {
+  try {
+    const count = await queries.getPendingFormsCount(userId)
+    return { isSuccess: true, data: count, message: "Pending forms count retrieved successfully" }
+  } catch (error) {
+    console.error("Failed to get pending forms count:", error)
+    return { isSuccess: false, message: "Failed to get pending forms count" }
+  }
+}
+
+export async function completeUserFeedbackFormAction(id: string): Promise<ActionResult<UserFeedbackForm>> {
+  try {
+    const form = await queries.getUserFeedbackFormById(id);
+    if (!form) {
+      return { isSuccess: false, message: "Form not found" };
+    }
+    if (form.status === 'closed') {
+      return { isSuccess: false, message: "This form is already closed and cannot be completed" };
+    }
+    const updatedForm = await queries.updateUserFeedbackForm(id, { status: 'closed' });
+    revalidatePath("/");
+    return { isSuccess: true, data: updatedForm, message: "User feedback form completed successfully" };
+  } catch (error) {
+    console.error("Failed to complete user feedback form:", error);
+    return { isSuccess: false, message: "Failed to complete user feedback form" };
+  }
+}
+
+export async function getActiveAndOverdueFormsCountAction(userId: string): Promise<ActionResult<{ activeCount: number; overdueCount: number }>> {
+  try {
+    const activeCount = await queries.getActiveFormsCount(userId);
+    const overdueCount = await queries.getOverdueFormsCount(userId);
+    return { 
+      isSuccess: true, 
+      data: { activeCount, overdueCount }, 
+      message: "Active and overdue forms count retrieved successfully" 
+    };
+  } catch (error) {
+    console.error("Failed to get active and overdue forms count:", error);
+    return { isSuccess: false, message: "Failed to get active and overdue forms count" };
+  }
+}

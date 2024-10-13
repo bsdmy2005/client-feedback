@@ -4,17 +4,14 @@ import postmarkClient from './postmarkClient';
 export async function sendEmailWithTemplate({ 
   to, 
   templateId, 
-  templateModel 
+  templateModel
 }: {
   to: string;
-  templateId: string;
+  templateId: number | string;
   templateModel: Record<string, unknown>;
 }) {
   try {
-    // Use an environment variable for the 'From' address
-    const fromAddress = process.env.POSTMARK_FROM_EMAIL || 'no-reply@yourdomain.com';
-
-    // Ensure the 'to' address has the same domain as the 'from' address
+    const fromAddress = process.env.POSTMARK_FROM_EMAIL || 'bereket@elenjicalsolutions.com';
     const fromDomain = fromAddress.split('@')[1];
     const toDomain = to.split('@')[1];
 
@@ -23,12 +20,19 @@ export async function sendEmailWithTemplate({
       return null;
     }
 
+    let processedTemplateId: number | string = templateId;
+    if (typeof templateId === 'string' && /^\d+$/.test(templateId)) {
+      processedTemplateId = parseInt(templateId, 10);
+    }
+
     const response = await postmarkClient.sendEmailWithTemplate({
       From: fromAddress,
       To: to,
-      TemplateId: parseInt(templateId),
+      TemplateId: typeof processedTemplateId === 'number' ? processedTemplateId : undefined,
+      TemplateAlias: typeof processedTemplateId === 'string' ? processedTemplateId : undefined,
       TemplateModel: templateModel,
     });
+
     return response;
   } catch (error) {
     console.error('Error sending email:', error);

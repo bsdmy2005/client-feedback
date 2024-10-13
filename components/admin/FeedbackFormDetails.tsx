@@ -1,14 +1,17 @@
 "use client"
 
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { FeedbackForm } from "@/db/schema/feedback-forms-schema"
 import { UserFeedbackForm } from "@/db/schema/user-feedback-forms-schema"
 import { FormAnswer } from "@/db/schema/form-answers-schema"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { sendReminderEmail } from "@/actions/reminder-actions"
+import { useToast } from "@/components/ui/use-toast"
+import { format } from "date-fns"; // Import format from date-fns
 
 type UserFormWithName = UserFeedbackForm & { userName: string };
 
@@ -19,6 +22,9 @@ interface FeedbackFormDetailsProps {
 }
 
 export function FeedbackFormDetails({ feedbackForm, userForms, formAnswers }: FeedbackFormDetailsProps) {
+  const { toast } = useToast();
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+
   // Group form answers by user
   const answersByUser = formAnswers.reduce((acc, answer) => {
     if (!acc[answer.userId]) {
@@ -27,6 +33,30 @@ export function FeedbackFormDetails({ feedbackForm, userForms, formAnswers }: Fe
     acc[answer.userId].push(answer);
     return acc;
   }, {} as Record<string, FormAnswer[]>);
+
+  const handleSendReminder = async (userForm: UserFormWithName) => {
+    setSendingReminder(userForm.id);
+    const result = await sendReminderEmail(
+      userForm.userId,
+      userForm.id,
+      feedbackForm.templateName,
+      userForm.dueDate
+    );
+    setSendingReminder(null);
+
+    if (result.isSuccess) {
+      toast({
+        title: "Reminder Sent",
+        description: `Reminder email sent to ${userForm.userName}`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: result.message || "Failed to send reminder email",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card>
@@ -42,6 +72,7 @@ export function FeedbackFormDetails({ feedbackForm, userForms, formAnswers }: Fe
               <TableHead>Status</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Actions</TableHead>
+              <TableHead>Send Reminder</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -53,13 +84,23 @@ export function FeedbackFormDetails({ feedbackForm, userForms, formAnswers }: Fe
                     {userForm.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(userForm.dueDate).toLocaleDateString()}</TableCell>
+                <TableCell>{format(new Date(userForm.dueDate), 'yyyy/MM/dd')}</TableCell>
                 <TableCell>
                   {userForm.status === "submitted" && (
                     <Link href={`/admin/feedback/${feedbackForm.id}/user/${userForm.userId}`}>
                       <Button variant="outline" size="sm">View Responses</Button>
                     </Link>
                   )}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSendReminder(userForm)}
+                    disabled={userForm.status === "submitted" || sendingReminder === userForm.id}
+                  >
+                    {sendingReminder === userForm.id ? "Sending..." : "Send Reminder"}
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

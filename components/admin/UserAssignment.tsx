@@ -3,17 +3,17 @@
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { UserIcon, FileTextIcon, SearchIcon } from "lucide-react"
+import { UserIcon, FileTextIcon, SearchIcon, XCircleIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { getAllProfilesAction } from "@/actions/profiles-actions"
 import { getAllTemplates } from "@/actions/feedback-form-templates-actions"
-import { createAssignmentAction, deleteAssignmentAction, getAllAssignmentsAction,assignUsersToTemplate } from "@/actions/user-template-assignments-actions"
+import { getAllAssignmentsAction, assignUsersToTemplate, removeUserFromTemplateAssignment } from "@/actions/user-template-assignments-actions"
 import { SelectProfile } from "@/db/schema/profiles-schema"
 import { Template } from "@/db/schema/feedback-form-templates-schema"
 import { UserTemplateAssignment } from "@/db/schema/user-template-assignments-schema"
 import { toast } from "@/components/ui/use-toast"
-
 
 export function UserAssignment() {
   const [users, setUsers] = useState<SelectProfile[]>([])
@@ -108,6 +108,28 @@ export function UserAssignment() {
     }
   }
 
+  const handleRemoveUser = async (userId: string) => {
+    if (!selectedTemplate) return
+
+    try {
+      const result = await removeUserFromTemplateAssignment(userId, selectedTemplate)
+      if (result.isSuccess) {
+        setSelectedUsers(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(userId)
+          return newSet
+        })
+        await fetchAssignments()
+        toast({ title: "User removed from template assignment successfully" })
+      } else {
+        toast({ title: result.message || "Failed to remove user from template assignment", variant: "destructive" })
+      }
+    } catch (error) {
+      console.error("Error removing user from template assignment:", error)
+      toast({ title: "An error occurred while removing the user", variant: "destructive" })
+    }
+  }
+
   const getAssignedUsersForTemplate = (templateId: string) => {
     return assignments
       .filter(assignment => assignment.templateId === templateId)
@@ -161,52 +183,46 @@ export function UserAssignment() {
             </div>
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-250px)] overflow-y-auto">
-            {filteredUsers.map((user) => (
-              <div key={user.userId} className="flex items-center space-x-2 py-2 hover:bg-gray-100 rounded-md px-2">
-                <Checkbox
-                  id={`user-${user.userId}`}
-                  checked={selectedUsers.has(user.userId)}
-                  onCheckedChange={() => handleUserSelect(user.userId)}
-                  disabled={!selectedTemplate}
-                />
-                <label htmlFor={`user-${user.userId}`} className="flex items-center flex-1 cursor-pointer">
-                  <UserIcon className="mr-2 h-4 w-4 text-green-500" />
-                  <span className="font-medium">{user.firstName} {user.lastName}</span>
-                </label>
-              </div>
-            ))}
+            {filteredUsers.map((user) => {
+              const isAssigned = selectedUsers.has(user.userId)
+              return (
+                <div key={user.userId} className="flex items-center justify-between space-x-2 py-2 hover:bg-gray-100 rounded-md px-2">
+                  <div className="flex items-center">
+                    <Checkbox
+                      id={`user-${user.userId}`}
+                      checked={isAssigned}
+                      onCheckedChange={() => handleUserSelect(user.userId)}
+                      disabled={!selectedTemplate}
+                    />
+                    <label htmlFor={`user-${user.userId}`} className="flex items-center cursor-pointer ml-2">
+                      <UserIcon className="mr-2 h-4 w-4 text-green-500" />
+                      <span className="font-medium">{user.firstName} {user.lastName}</span>
+                    </label>
+                  </div>
+                  {isAssigned && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveUser(user.userId)}
+                    >
+                      <XCircleIcon className="h-4 w-4 text-red-500" />
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
       </div>
       <div>
         <Button 
           onClick={handleSaveAssignments} 
-          disabled={!selectedTemplate || selectedUsers.size === 0}
+          disabled={!selectedTemplate}
           className="px-6 py-2"
         >
           Save Assignments
         </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Assignments</CardTitle>
-        </CardHeader>
-        <CardContent className="max-h-[300px] overflow-y-auto">
-          {templates.map((template) => {
-            const assignedUsers = getAssignedUsersForTemplate(template.id)
-            return assignedUsers.length > 0 && (
-              <div key={template.id} className="mb-4">
-                <h3 className="font-semibold mb-2">{template.name}</h3>
-                <ul className="list-disc pl-5">
-                  {assignedUsers.map((user) => (
-                    <li key={user.userId}>{user.firstName} {user.lastName}</li>
-                  ))}
-                </ul>
-              </div>
-            )
-          })}
-        </CardContent>
-      </Card>
     </div>
   )
 }

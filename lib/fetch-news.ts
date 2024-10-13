@@ -45,10 +45,8 @@ export async function fetchLatestNews(): Promise<NewsArticle[]> {
     }
 
     const data = await response.json();
-    console.log("API Response:", JSON.stringify(data, null, 2));
 
     if (data.articles.length === 0) {
-      console.warn("No articles found. Trying broader query...");
       return await fetchBroaderNews(apiKey);
     }
 
@@ -78,7 +76,6 @@ async function fetchBroaderNews(apiKey: string): Promise<NewsArticle[]> {
     }
 
     const data = await response.json();
-    console.log("Broader API Response:", JSON.stringify(data, null, 2));
 
     return data.articles.slice(0, 10); // Limit to 10 articles
   } catch (error) {
