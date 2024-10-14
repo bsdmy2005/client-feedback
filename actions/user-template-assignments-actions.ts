@@ -168,3 +168,24 @@ export async function removeUserFromTemplateAssignment(userId: string, templateI
     return { isSuccess: false, message: "Failed to remove user from template assignment" }
   }
 }
+
+export async function removeUserFromTemplateAssignmentAndDeletePendingForms(userId: string, templateId: string): Promise<ActionResult<void>> {
+  try {
+    await db.transaction(async (tx) => {
+      // Remove the user from the template assignment
+      await tx.delete(userTemplateAssignmentsTable)
+        .where(and(
+          eq(userTemplateAssignmentsTable.userId, userId),
+          eq(userTemplateAssignmentsTable.templateId, templateId)
+        ));
+
+      // Delete associated pending feedback forms
+      await deleteUserPendingFeedbackFormsByUserAndTemplateId(userId, templateId);
+    });
+
+    return { isSuccess: true, message: "User removed from template assignment and pending forms deleted successfully" };
+  } catch (error) {
+    console.error("Error removing user from template assignment and deleting pending forms:", error);
+    return { isSuccess: false, message: "Failed to remove user from template assignment and delete pending forms" };
+  }
+}

@@ -9,7 +9,7 @@ import { sendTeamsMessage } from '@/lib/microsoftGraph';
 export async function runDailyTasks() {
   await sendUpcomingFormReminders();
   await updateFormStatuses();
- // await sendTeamsNotifications();
+  await sendTeamsNotifications();
 }
 
 async function sendUpcomingFormReminders() {
@@ -98,7 +98,6 @@ async function sendTeamsNotifications() {
 
         const message = `Reminder: Your feedback form "${form.templateName}" is due on ${formattedDueDate}. Please complete it before the due date.`;
         
-        // Add a null check here
         if (user.email) {
           const success = await sendTeamsMessage(user.email, message);
           

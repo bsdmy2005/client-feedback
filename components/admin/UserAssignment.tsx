@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getAllProfilesAction } from "@/actions/profiles-actions"
 import { getAllTemplates } from "@/actions/feedback-form-templates-actions"
-import { getAllAssignmentsAction, assignUsersToTemplate, removeUserFromTemplateAssignment } from "@/actions/user-template-assignments-actions"
+import { getAllAssignmentsAction, assignUsersToTemplate, removeUserFromTemplateAssignmentAndDeletePendingForms } from "@/actions/user-template-assignments-actions"
 import { SelectProfile } from "@/db/schema/profiles-schema"
 import { Template } from "@/db/schema/feedback-form-templates-schema"
 import { UserTemplateAssignment } from "@/db/schema/user-template-assignments-schema"
@@ -112,7 +112,7 @@ export function UserAssignment() {
     if (!selectedTemplate) return
 
     try {
-      const result = await removeUserFromTemplateAssignment(userId, selectedTemplate)
+      const result = await removeUserFromTemplateAssignmentAndDeletePendingForms(userId, selectedTemplate)
       if (result.isSuccess) {
         setSelectedUsers(prev => {
           const newSet = new Set(prev)
@@ -120,13 +120,13 @@ export function UserAssignment() {
           return newSet
         })
         await fetchAssignments()
-        toast({ title: "User removed from template assignment successfully" })
+        toast({ title: "User removed from template assignment and pending forms deleted successfully" })
       } else {
-        toast({ title: result.message || "Failed to remove user from template assignment", variant: "destructive" })
+        toast({ title: result.message || "Failed to remove user from template assignment and delete pending forms", variant: "destructive" })
       }
     } catch (error) {
-      console.error("Error removing user from template assignment:", error)
-      toast({ title: "An error occurred while removing the user", variant: "destructive" })
+      console.error("Error removing user from template assignment and deleting pending forms:", error)
+      toast({ title: "An error occurred while removing the user and deleting pending forms", variant: "destructive" })
     }
   }
 

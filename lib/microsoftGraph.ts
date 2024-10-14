@@ -9,50 +9,51 @@ const credential = new ClientSecretCredential(
 );
 
 const authProvider = new TokenCredentialAuthenticationProvider(credential, {
-  scopes: ['https://graph.microsoft.com/.default', 'TeamsActivity.Send', 'TeamsActivity.Send.User']
+  scopes: ['https://graph.microsoft.com/.default']
 });
 
-const graphClient = Client.initWithMiddleware({ authProvider });
+const client = Client.initWithMiddleware({
+  authProvider: authProvider,
+});
 
-export async function sendTeamsMessage(email: string, message: string) {
-  console.log(`Attempting to send Teams message to user: ${email}`);
+export async function sendTeamsMessage(userEmail: string, message: string): Promise<boolean> {
   try {
-    console.log(`Preparing notification payload for user: ${email}`);
-    const notificationPayload = {
+    const payload = {
       topic: {
         source: "text",
-        value: "Overdue Feedback Form"
+        value: "Feedback Form Reminder",
+        webUrl: "https://elenjicalsolutions.com/feedback-forms" // Replace with your actual feedback forms URL
       },
       activityType: "taskCreated",
       previewText: {
-        content: "You have an overdue feedback form"
+        content: "New feedback form reminder"
       },
       templateParameters: [
         {
           name: "taskName",
-          value: message
+          value: "Complete Feedback Form"
         }
-      ]
+      ],
+      recipient: {
+        "@odata.type": "microsoft.graph.aadUserNotificationRecipient",
+        userId: userEmail
+      },
+      payload: {
+        content: message
+      }
     };
-    console.log(`Notification payload prepared: ${JSON.stringify(notificationPayload)}`);
 
-    console.log(`Sending API request to Microsoft Graph for user: ${email}`);
-    const response = await graphClient.api(`/users/${email}/teamwork/sendActivityNotification`)
-      .post(notificationPayload);
-    
-    console.log(`API response received for user ${email}:`, response);
-    console.log(`Teams message successfully sent to user ${email}`);
+    console.log('Sending Teams notification with payload:', JSON.stringify(payload, null, 2));
+
+    await client.api(`/users/${userEmail}/teamwork/sendActivityNotification`)
+      .post(payload);
+
+    console.log(`Teams message sent successfully to ${userEmail}`);
     return true;
   } catch (error) {
-    console.error(`Failed to send Teams message to user ${email}:`, error);
-    if (error instanceof Error) {
-      console.error(`Error name: ${error.name}`);
-      console.error(`Error message: ${error.message}`);
-      console.error(`Error stack: ${error.stack}`);
-    }
-    if (typeof error === 'object' && error !== null) {
-      console.error('Error details:', JSON.stringify(error, null, 2));
-    }
+    console.error(`Failed to send Teams message to user ${userEmail}:`, error);
     return false;
   }
 }
+
+export default client;
