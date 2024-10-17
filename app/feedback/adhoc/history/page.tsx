@@ -32,7 +32,7 @@ export default async function AdhocFeedbackHistoryPage() {
           ))}
         </ul>
       ) : (
-        <p>You haven't submitted any adhoc feedback yet.</p>
+        <p>You haven&apos;t submitted any adhoc feedback yet.</p>
       )}
     </div>
   )

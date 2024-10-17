@@ -35,7 +35,7 @@ export function FeedbackFormManager() {
 
   useEffect(() => {
     fetchTemplates()
-  }, [])
+  }, [fetchTemplates])
 
   const fetchTemplates = async () => {
     try {

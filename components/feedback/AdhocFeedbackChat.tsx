@@ -31,7 +31,7 @@ export function AdhocFeedbackChat() {
     fetchClients()
   }, [])
 
-  const feedbackThemes = [
+  const feedbackThemes = useMemo(() => [
     {
       id: "blockers",
       name: "Blockers",
@@ -114,24 +114,24 @@ export function AdhocFeedbackChat() {
         "What support might you need to navigate these situations?"
       ]
     }
-  ]
+  ], [])
 
-  const welcomeMessage = (
+  const welcomeMessage = useMemo(() => (
     <>
       <p className="mb-4">
         This platform is designed to collect real-time feedback that helps us act quicker and make better decisions. Your feedback is confidential and crucial for our collective success. The management team regularly reviews these insights to make informed decisions and provide better support.
       </p>
       <p className="font-semibold mb-2">To get started:</p>
       <ol className="list-decimal pl-5 mb-4">
-        <li>Select the client you're working with from the dropdown below.</li>
-        <li>Choose one or more feedback themes you'd like to discuss.</li>
+        <li>Select the client you&apos;re working with from the dropdown below.</li>
+        <li>Choose one or more feedback themes you&apos;d like to discuss.</li>
         <li>Answer the specific questions provided for each theme.</li>
       </ol>
       <p className="font-semibold">
-        Thank you for your commitment to our continuous improvement. Let's begin!
+        Thank you for your commitment to our continuous improvement. Let&apos;s begin!
       </p>
     </>
-  )
+  ), [])
 
   const handleClientSelect = useCallback((clientId: string) => {
     setSelectedClient(clientId)
@@ -163,7 +163,7 @@ export function AdhocFeedbackChat() {
       const promptMessage: Message = { role: 'assistant', content: theme.question }
       setConversation(prev => [...prev, themeChangeMessage, promptMessage])
     }
-  }, [])
+  }, [feedbackThemes])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -255,7 +255,7 @@ export function AdhocFeedbackChat() {
         </TooltipProvider>
       </div>
     </div>
-  ), [selectedThemes, handleThemeSelect])
+  ), [selectedThemes, handleThemeSelect, feedbackThemes])
 
   const WelcomeSection = useMemo(() => (
     <div className="p-4 rounded bg-blue-50 border border-blue-200">
@@ -275,7 +275,7 @@ export function AdhocFeedbackChat() {
       </Select>
       {selectedClient && ThemeSelector}
     </div>
-  ), [clients, selectedClient, handleClientSelect, ThemeSelector])
+  ), [clients, selectedClient, handleClientSelect, ThemeSelector, welcomeMessage])
 
   const ChatSection = useMemo(() => (
     <div className="flex h-full">
@@ -339,7 +339,7 @@ export function AdhocFeedbackChat() {
         </form>
       </div>
     </div>
-  ), [clients, selectedClient, currentTheme, selectedThemes, conversation, isLoading, userInput, handleChangeTheme, handleSubmit, handleEndConversation, handleInputChange, ThemeSelector])
+  ), [clients, selectedClient, currentTheme, selectedThemes, conversation, isLoading, userInput, handleChangeTheme, handleSubmit, handleEndConversation, handleInputChange, ThemeSelector, feedbackThemes])
 
   return (
     <div className="h-[calc(100vh-200px)]">

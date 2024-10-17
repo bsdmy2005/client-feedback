@@ -14,15 +14,9 @@ import {
 } from "@/components/ui/tooltip"
 
 export function NotificationBell() {
+  const { userId } = useAuth();
   const [activeCount, setActiveCount] = useState(0)
   const [overdueCount, setOverdueCount] = useState(0)
-  const { userId } = useAuth()
-
-  useEffect(() => {
-    if (userId) {
-      fetchActiveAndOverdueFormsCount()
-    }
-  }, [userId])
 
   const fetchActiveAndOverdueFormsCount = async () => {
     if (userId) {
@@ -33,6 +27,12 @@ export function NotificationBell() {
       }
     }
   }
+
+  useEffect(() => {
+    if (userId) {
+      fetchActiveAndOverdueFormsCount()
+    }
+  }, [userId])
 
   const totalCount = activeCount + overdueCount
 

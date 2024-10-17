@@ -32,7 +32,7 @@ export function FeedbackDashboard() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const fetchData = async () => {
     try {
