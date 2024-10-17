@@ -30,10 +30,6 @@ export function FeedbackDashboard() {
   const [statusFilter, setStatusFilter] = useState<string[]>(["pending", "active", "overdue"])
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
   const fetchData = async () => {
     try {
       const formsResult = await getAllFeedbackFormsWithProgress()
@@ -46,6 +42,10 @@ export function FeedbackDashboard() {
       })
     }
   }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const filteredFeedbackForms = useMemo(() => {
     return feedbackForms.filter(form => 

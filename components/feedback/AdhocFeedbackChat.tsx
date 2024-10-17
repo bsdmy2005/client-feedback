@@ -18,7 +18,6 @@ export function AdhocFeedbackChat() {
   const [clients, setClients] = useState<{id: string, name: string}[]>([])
   const [selectedClient, setSelectedClient] = useState<string | null>(null)
   const [selectedThemes, setSelectedThemes] = useState<string[]>([])
-  const [currentTheme, setCurrentTheme] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -124,7 +123,7 @@ export function AdhocFeedbackChat() {
       <p className="font-semibold mb-2">To get started:</p>
       <ol className="list-decimal pl-5 mb-4">
         <li>Select the client you&apos;re working with from the dropdown below.</li>
-        <li>Choose one or more feedback themes you&apos;d like to discuss.</li>
+        <li>In the chat, you&apos;ll be able to choose feedback themes to discuss.</li>
         <li>Answer the specific questions provided for each theme.</li>
       </ol>
       <p className="font-semibold">
@@ -138,39 +137,40 @@ export function AdhocFeedbackChat() {
   }, [])
 
   const handleThemeSelect = useCallback((themeId: string) => {
-    setSelectedThemes(prev => {
-      if (prev.includes(themeId)) {
-        const newThemes = prev.filter(id => id !== themeId)
-        if (currentTheme === themeId) {
-          setCurrentTheme(newThemes[0] || null)
-        }
-        return newThemes
-      } else {
-        const newThemes = [...prev, themeId]
-        if (!currentTheme) {
-          setCurrentTheme(themeId)
-        }
-        return newThemes
-      }
-    })
-  }, [currentTheme])
-
-  const handleChangeTheme = useCallback((themeId: string) => {
-    setCurrentTheme(themeId)
     const theme = feedbackThemes.find(t => t.id === themeId)
     if (theme) {
       const themeChangeMessage: Message = { role: 'system', content: `Theme changed to: ${theme.name}` }
       const promptMessage: Message = { role: 'assistant', content: theme.question }
-      setConversation(prev => [...prev, themeChangeMessage, promptMessage])
+      const newConversation = [...conversation, themeChangeMessage, promptMessage]
+
+      // Add clarification questions
+      theme.clarifications.forEach(clarification => {
+        newConversation.push({ role: 'assistant', content: clarification })
+      })
+
+      setConversation(newConversation)
+
+      // Persist the initial conversation to the database
+      if (selectedClient) {
+        submitAdhocFeedback(selectedClient, newConversation)
+          .catch(error => {
+            console.error("Failed to save initial conversation:", error)
+            toast({
+              title: "Error",
+              description: "Failed to save the conversation",
+              variant: "destructive",
+            })
+          })
+      }
     }
-  }, [feedbackThemes])
+  }, [feedbackThemes, conversation, selectedClient, toast])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedClient || !currentTheme) {
+    if (!selectedClient) {
       toast({
         title: "Error",
-        description: "Please select a client and a feedback theme before submitting",
+        description: "Please select a client before submitting",
         variant: "destructive",
       })
       return
@@ -185,36 +185,34 @@ export function AdhocFeedbackChat() {
     }
 
     const newMessage: Message = { role: 'user', content: userInput }
-    setConversation(prev => [...prev, newMessage])
+    const updatedConversation = [...conversation, newMessage]
+    setConversation(updatedConversation)
     setUserInput("")
     setIsLoading(true)
 
-    let result;
-    if (conversation.length === 0) {
-      // This is the first message, use submitAdhocFeedback
-      result = await submitAdhocFeedback(selectedClient, [newMessage])
-    } else {
-      // This is a continuation of the conversation, use continueAdhocFeedback
-      result = await continueAdhocFeedback(selectedClient, [...conversation, newMessage])
-    }
+    try {
+      const result = await continueAdhocFeedback(selectedClient, updatedConversation)
 
-    setIsLoading(false)
-    if (result.isSuccess && result.data) {
-      setConversation(result.data)
-    } else {
+      setIsLoading(false)
+      if (result.isSuccess && result.data) {
+        setConversation(result.data)
+      } else {
+        throw new Error(result.message || "Failed to continue conversation")
+      }
+    } catch (error) {
+      console.error("Error in handleSubmit:", error)
       toast({
         title: "Error",
-        description: result.message || "Failed to continue conversation",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       })
+      setIsLoading(false)
     }
-  }, [selectedClient, currentTheme, userInput, conversation, toast])
+  }, [selectedClient, userInput, conversation, toast])
 
   const handleEndConversation = useCallback(() => {
     setConversation([])
     setSelectedClient(null)
-    setSelectedThemes([])
-    setCurrentTheme(null)
     setUserInput("")
     toast({
       title: "Conversation Ended",
@@ -225,37 +223,6 @@ export function AdhocFeedbackChat() {
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setUserInput(e.target.value)
   }, [])
-
-  const ThemeSelector = useMemo(() => (
-    <div className="mb-4">
-      <p className="mb-2 font-semibold">Feedback themes:</p>
-      <div className="flex flex-wrap gap-2 mb-2">
-        <TooltipProvider>
-          {feedbackThemes.map((theme) => (
-            <Tooltip key={theme.id}>
-              <TooltipTrigger>
-                <Badge
-                  variant={selectedThemes.includes(theme.id) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => handleThemeSelect(theme.id)}
-                >
-                  {theme.name}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p><strong>{theme.question}</strong></p>
-                <ul className="list-disc pl-4 mt-2">
-                  {theme.clarifications.map((clarification, index) => (
-                    <li key={index}>{clarification}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </TooltipProvider>
-      </div>
-    </div>
-  ), [selectedThemes, handleThemeSelect, feedbackThemes])
 
   const WelcomeSection = useMemo(() => (
     <div className="p-4 rounded bg-blue-50 border border-blue-200">
@@ -273,9 +240,8 @@ export function AdhocFeedbackChat() {
           ))}
         </SelectContent>
       </Select>
-      {selectedClient && ThemeSelector}
     </div>
-  ), [clients, selectedClient, handleClientSelect, ThemeSelector, welcomeMessage])
+  ), [clients, selectedClient, handleClientSelect, welcomeMessage])
 
   const ChatSection = useMemo(() => (
     <div className="flex h-full">
@@ -283,26 +249,32 @@ export function AdhocFeedbackChat() {
         <p className="font-semibold mb-2">Selected Client:</p>
         <p className="mb-4">{clients.find(c => c.id === selectedClient)?.name}</p>
         
-        <Select onValueChange={handleChangeTheme} value={currentTheme || undefined}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select or change theme" />
-          </SelectTrigger>
-          <SelectContent>
-            {selectedThemes.map((themeId) => (
-              <SelectItem key={themeId} value={themeId}>
-                {feedbackThemes.find(t => t.id === themeId)?.name}
-              </SelectItem>
+        <p className="font-semibold mb-2">Select a Theme:</p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <TooltipProvider>
+            {feedbackThemes.map((theme) => (
+              <Tooltip key={theme.id}>
+                <TooltipTrigger>
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => handleThemeSelect(theme.id)}
+                  >
+                    {theme.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p><strong>{theme.question}</strong></p>
+                  <ul className="list-disc pl-4 mt-2">
+                    {theme.clarifications.map((clarification, index) => (
+                      <li key={index}>{clarification}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
             ))}
-          </SelectContent>
-        </Select>
-        
-        {currentTheme && (
-          <div className="mt-4 p-2 bg-yellow-100 rounded">
-            <h3 className="font-semibold">Current Theme: {feedbackThemes.find(t => t.id === currentTheme)?.name}</h3>
-          </div>
-        )}
-        
-        {ThemeSelector}
+          </TooltipProvider>
+        </div>
       </div>
       <div className="w-3/4 flex flex-col">
         <div className="flex-grow overflow-y-auto p-4 space-y-2">
@@ -334,16 +306,16 @@ export function AdhocFeedbackChat() {
             className="flex-grow"
             rows={2}
           />
-          <Button type="submit" disabled={isLoading || !selectedClient || !currentTheme}>Send</Button>
+          <Button type="submit" disabled={isLoading || !selectedClient}>Send</Button>
           <Button type="button" variant="destructive" onClick={handleEndConversation}>End Conversation</Button>
         </form>
       </div>
     </div>
-  ), [clients, selectedClient, currentTheme, selectedThemes, conversation, isLoading, userInput, handleChangeTheme, handleSubmit, handleEndConversation, handleInputChange, ThemeSelector, feedbackThemes])
+  ), [clients, selectedClient, conversation, isLoading, userInput, handleSubmit, handleEndConversation, handleInputChange, feedbackThemes, handleThemeSelect])
 
   return (
     <div className="h-[calc(100vh-200px)]">
-      {!currentTheme ? WelcomeSection : ChatSection}
+      {!selectedClient ? WelcomeSection : ChatSection}
     </div>
   )
 }

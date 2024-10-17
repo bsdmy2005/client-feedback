@@ -33,10 +33,6 @@ export function FeedbackFormManager() {
   const [quantity, setQuantity] = useState<number>(1)
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchTemplates()
-  }, [fetchTemplates])
-
   const fetchTemplates = async () => {
     try {
       const templatesResult = await getAllTemplates()
@@ -53,6 +49,10 @@ export function FeedbackFormManager() {
       })
     }
   }
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [])  // Remove fetchTemplates from the dependency array
 
   const getRecurrenceInterval = () => {
     if (recurrenceType === "custom") {
