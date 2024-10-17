@@ -8,7 +8,7 @@ export async function getAllClientsAction(): Promise<ActionResult<any>> {
   try {
     const clients = await getAllClients();
     const clientsData = clients.map(client => ({
-      id: client.clientId,
+      id: client.clientId,  // Make sure this is correct
       name: client.name,
       description: client.description
     }));
@@ -77,5 +77,6 @@ export async function getClientByNameAction(name: string): Promise<ActionResult<
     return { isSuccess: false, message: "Failed to fetch client" };
   }
 }
+
 
 
